@@ -32,7 +32,10 @@ export default function ProfilePage() {
           {user.username && <p className="muted">@{user.username}</p>}
           <p className="muted small">На сайте с {joined}</p>
         </div>
-        <button className="btn btn--ghost" onClick={logout}>Выйти</button>
+        <div className="profile__actions">
+          {user.role === 'admin' && <Link to="/admin" className="btn btn--ghost">Редактор задач</Link>}
+          <button className="btn btn--ghost" onClick={logout}>Выйти</button>
+        </div>
       </div>
 
       {error && <p className="error">Не удалось загрузить статистику: {error}</p>}

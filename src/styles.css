@@ -340,6 +340,7 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
   .nav { gap: 0; }
   .nav__link { padding: 6px 7px; font-size: 13px; }
   .nav__user-name { display: none; } /* на телефоне в шапке — только аватар */
+  .nav__link--admin { display: none; } /* редактор на телефоне — кнопкой в профиле */
   .logo { font-size: 14px; }
 }
 
@@ -350,3 +351,32 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
 .tile--score.is-passed .tile__hint { color: var(--ok); }
 .tile--score.is-failed { border-color: rgba(242, 102, 122, 0.4); }
 .tile--score.is-failed .tile__hint { color: var(--bad); }
+
+/* ---------- Редактор задач ---------- */
+.success { color: var(--ok); }
+.btn--danger { background: var(--bad); color: #fff; }
+.admin-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.admin-list__row { display: grid; grid-template-columns: 56px 1fr auto auto; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.admin-list__row:last-child { border-bottom: 0; }
+.admin-list__text { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.admin-list__actions { display: flex; gap: 6px; }
+@media (max-width: 620px) {
+  .admin-list__row { grid-template-columns: 1fr auto; }
+  .admin-list__row .task__id, .admin-list__row .badge { display: none; }
+  .admin-list__actions { grid-column: 1 / -1; }
+}
+
+.admin-form { display: grid; gap: 12px; }
+.field { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+.field input, .field textarea, .field select {
+  width: 100%; padding: 9px 12px; background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; font: inherit; font-size: 15px;
+}
+.field textarea { resize: vertical; }
+.field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+@media (max-width: 620px) { .field-row { grid-template-columns: 1fr; } }
+.admin-form__actions { display: flex; gap: 8px; }
+
+.profile__actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 520px) { .profile { flex-wrap: wrap; } .profile__actions { width: 100%; justify-content: flex-start; } }

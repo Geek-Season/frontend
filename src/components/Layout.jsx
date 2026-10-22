@@ -17,6 +17,7 @@ export default function Layout() {
             <NavLink to="/tasks" className="nav__link">Задания</NavLink>
             <NavLink to="/exam" className="nav__link">Пробник</NavLink>
             <NavLink to="/rating" className="nav__link">Рейтинг</NavLink>
+            {user?.role === 'admin' && <NavLink to="/admin" className="nav__link nav__link--admin">Редактор</NavLink>}
             {!checking && (user ? (
               <NavLink to="/profile" className="nav__link nav__user">
                 <span className="avatar avatar--small">{user.first_name.slice(0, 1).toUpperCase()}</span>

@@ -28,7 +28,12 @@ async function request(path, options = {}) {
     try {
       const body = await response.json()
       if (typeof body.detail === 'string') message = body.detail
-      else if (Array.isArray(body.detail)) message = 'Проверьте формат данных'
+      else if (Array.isArray(body.detail)) {
+        // 422 от FastAPI: список ошибок по полям — показываем первую понятно.
+        const first = body.detail[0]
+        const field = first?.loc?.[first.loc.length - 1]
+        message = field ? `Проверьте поле «${field}»: ${first.msg}` : 'Проверьте формат данных'
+      }
     } catch {
       // тело не JSON — оставляем общее сообщение
     }
@@ -127,4 +132,24 @@ export function finishExam(examId) {
 /** period: 'week' | 'all' */
 export function getRating(period) {
   return request(`/rating?period=${period}`)
+}
+
+// ---------- Редактор задач (только админ) ----------
+
+/** Задача целиком, с ответом и разбором */
+export function getTaskFull(id) {
+  return request(`/tasks/${id}/admin`)
+}
+
+export function createTask(data) {
+  return request('/tasks', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateTask(id, data) {
+  return request(`/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+/** Убрать в архив (задача пропадёт из списков, статистика сохранится) */
+export function archiveTask(id) {
+  return request(`/tasks/${id}`, { method: 'DELETE' })
 }

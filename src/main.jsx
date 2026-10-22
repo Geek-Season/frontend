@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { AuthProvider } from './auth.jsx'
 import Layout from './components/Layout.jsx'
+import AdminPage from './pages/AdminPage.jsx'
 import ExamPage from './pages/ExamPage.jsx'
 import ExamResultPage from './pages/ExamResultPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
@@ -21,6 +22,7 @@ import './styles.css'
 //   /profile        — профиль (только для вошедших)
 //   /exam           — пробник (старт или идущий), /exam/12 — результат
 //   /rating         — рейтинг
+//   /admin          — редактор задач (только админ)
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
@@ -35,6 +37,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/exam" element={<ExamPage />} />
             <Route path="/exam/:id" element={<ExamResultPage />} />
             <Route path="/rating" element={<RatingPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<PlaceholderPage title="Страница не найдена" />} />
           </Route>
         </Routes>
