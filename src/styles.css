@@ -134,3 +134,48 @@ h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; }
   .answer { flex-wrap: wrap; }
   .answer__input { flex: 1; width: auto; }
 }
+
+/* ---------- Вход и профиль ---------- */
+.nav { align-items: center; }
+.nav__login { background: var(--lime); color: #11140a !important; font-weight: 600; }
+.nav__login:hover { background: var(--lime) !important; filter: brightness(1.08); }
+.nav__user { display: flex; align-items: center; gap: 8px; }
+
+.avatar {
+  display: grid; place-items: center; flex-shrink: 0;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--accent); color: #fff; font-weight: 700; font-size: 26px;
+}
+.avatar--small { width: 24px; height: 24px; font-size: 12px; }
+
+.login h1 { margin-bottom: 4px; }
+.login__grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin-top: 24px; align-items: start; }
+@media (max-width: 720px) { .login__grid { grid-template-columns: 1fr; } }
+.login__card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+.login__card h2 { font-size: 17px; margin: 0 0 16px; }
+
+.qr {
+  display: grid; place-items: center; margin: 0 auto 16px;
+  width: 220px; min-height: 220px; padding: 12px; border-radius: 12px; background: #fff;
+}
+.qr--empty { background: var(--surface-2); color: var(--muted); text-align: center; gap: 12px; align-content: center; padding: 20px; }
+.qr--empty p { margin: 0; }
+
+.steps { margin: 0 0 16px; padding-left: 20px; color: var(--muted); font-size: 14px; }
+.steps li { margin-bottom: 4px; }
+.center { text-align: center; }
+.btn.wide, a.btn { display: block; text-align: center; }
+
+.code-form { display: grid; gap: 10px; margin-top: 16px; }
+.code-input {
+  width: 100%; padding: 12px; text-align: center; letter-spacing: 0.4em;
+  font-family: var(--mono); font-size: 24px; font-weight: 700;
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px;
+}
+.code-input:focus { outline: none; border-color: var(--accent); }
+code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
+
+.profile { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
+.profile .muted { margin: 2px 0 0; }
+.profile + .placeholder { margin-bottom: 16px; }
+.placeholder .btn { display: inline-block; margin-top: 12px; }

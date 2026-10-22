@@ -3,11 +3,24 @@
 
 const BASE = '/api'
 
+// Токен вошедшего пользователя. Его выставляет auth.jsx после входа.
+let authToken = null
+export function setAuthToken(token) {
+  authToken = token
+}
+
+export class ApiError extends Error {
+  constructor(message, status) {
+    super(message)
+    this.status = status
+  }
+}
+
 async function request(path, options = {}) {
-  const response = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  })
+  const headers = { 'Content-Type': 'application/json' }
+  if (authToken) headers.Authorization = `Bearer ${authToken}`
+
+  const response = await fetch(BASE + path, { headers, ...options })
 
   if (!response.ok) {
     // FastAPI кладёт текст ошибки в поле detail.
@@ -15,15 +28,17 @@ async function request(path, options = {}) {
     try {
       const body = await response.json()
       if (typeof body.detail === 'string') message = body.detail
-      else if (Array.isArray(body.detail)) message = 'Проверьте формат ответа'
+      else if (Array.isArray(body.detail)) message = 'Проверьте формат данных'
     } catch {
       // тело не JSON — оставляем общее сообщение
     }
-    throw new Error(message)
+    throw new ApiError(message, response.status)
   }
 
   return response.status === 204 ? null : response.json()
 }
+
+// ---------- Задания ----------
 
 /** Карточки номеров ЕГЭ: [{ code, title, tasks_count }] */
 export function getNumbers() {
@@ -43,4 +58,26 @@ export function checkAnswer(taskId, answer) {
     method: 'POST',
     body: JSON.stringify({ answer }),
   })
+}
+
+// ---------- Вход ----------
+
+/** Ключ для QR: { token, bot_link, expires_in } */
+export function startTelegramLogin() {
+  return request('/auth/telegram/start', { method: 'POST' })
+}
+
+/** { status: pending | declined | expired | confirmed, access_token?, user? } */
+export function getLoginStatus(token) {
+  return request(`/auth/telegram/status/${encodeURIComponent(token)}`)
+}
+
+/** Вход по коду из бота: { access_token, user } */
+export function loginWithCode(code) {
+  return request('/auth/code', { method: 'POST', body: JSON.stringify({ code }) })
+}
+
+/** Кто я: { id, first_name, last_name, username, created_at } */
+export function getMe() {
+  return request('/auth/me')
 }
