@@ -380,3 +380,13 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
 
 .profile__actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 520px) { .profile { flex-wrap: wrap; } .profile__actions { width: 100%; justify-content: flex-start; } }
+
+/* ---------- Достижения ---------- */
+.achievements { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+@media (max-width: 620px) { .achievements { grid-template-columns: 1fr; } }
+.achievement { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; }
+.achievement__icon { font-size: 26px; width: 36px; text-align: center; }
+.achievement__body { display: grid; gap: 1px; }
+.achievement__date { color: var(--ok); }
+.achievement.is-received { background: rgba(198, 243, 107, 0.06); border-color: rgba(198, 243, 107, 0.3); }
+.achievement.is-locked { opacity: 0.55; }

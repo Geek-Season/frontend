@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
-import { getMyStats } from '../api.js'
+import { getMyAchievements, getMyStats } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import ActivityChart from '../components/ActivityChart.jsx'
 
 export default function ProfilePage() {
   const { user, checking, logout } = useAuth()
   const [stats, setStats] = useState(null)
+  const [achievements, setAchievements] = useState([])
   const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!user) return
     getMyStats().then(setStats).catch((e) => setError(e.message))
+    // Достижения выдаёт фоновый воркер через RabbitMQ — обычно за секунду после ответа.
+    getMyAchievements().then(setAchievements).catch(() => {})
   }, [user])
 
   if (checking) return <p className="muted">Загрузка…</p>
@@ -41,6 +44,7 @@ export default function ProfilePage() {
       {error && <p className="error">Не удалось загрузить статистику: {error}</p>}
       {!stats && !error && <p className="muted">Загрузка статистики…</p>}
       {stats && (stats.total_attempts === 0 ? <EmptyStats /> : <Stats stats={stats} />)}
+      {achievements.length > 0 && <Achievements items={achievements} />}
     </section>
   )
 }
@@ -137,6 +141,33 @@ function Stats({ stats }) {
         </ul>
       </div>
     </>
+  )
+}
+
+function Achievements({ items }) {
+  const received = items.filter((a) => a.received_at).length
+  return (
+    <div className="panel">
+      <h2 className="panel__title">
+        Достижения <span className="muted small">· {received} из {items.length}</span>
+      </h2>
+      <ul className="achievements">
+        {items.map((a) => (
+          <li key={a.code} className={`achievement ${a.received_at ? 'is-received' : 'is-locked'}`}>
+            <span className="achievement__icon" aria-hidden="true">{a.received_at ? a.icon : '🔒'}</span>
+            <span className="achievement__body">
+              <strong>{a.title}</strong>
+              <span className="muted small">{a.description}</span>
+              {a.received_at && (
+                <span className="achievement__date small">
+                  получено {new Date(a.received_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+                </span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 

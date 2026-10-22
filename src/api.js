@@ -153,3 +153,10 @@ export function updateTask(id, data) {
 export function archiveTask(id) {
   return request(`/tasks/${id}`, { method: 'DELETE' })
 }
+
+// ---------- Достижения ----------
+
+/** Все достижения: received_at — дата получения или null */
+export function getMyAchievements() {
+  return request('/me/achievements')
+}
