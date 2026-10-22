@@ -68,6 +68,33 @@ function Stats({ stats }) {
         <Tile label="Всего ответов" value={stats.total_attempts} hint={`за ${dayWord(stats.active_days)}`} />
       </div>
 
+      {stats.weak_numbers.length > 0 && (
+        <div className="panel panel--weak">
+          <h2 className="panel__title">Что повторить</h2>
+          <p className="muted small panel__hint">
+            Номера, где есть нерешённые задачи или точность ниже 60%. Сначала — самые проблемные.
+          </p>
+          <ul className="weak">
+            {stats.weak_numbers.map((w) => (
+              <li key={w.code} className="weak__row">
+                <span className="number-progress__code">{w.code}</span>
+                <span className="weak__title">{w.title}</span>
+                <span className="weak__facts small">
+                  точность {Math.round(w.accuracy * 100)}%
+                  {w.unsolved_tasks > 0 && ` · не решено: ${w.unsolved_tasks}`}
+                </span>
+                <Link
+                  to={`/tasks/${w.code}${w.unsolved_tasks > 0 ? '?progress=unsolved' : ''}`}
+                  className="btn btn--small"
+                >
+                  Потренировать
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="panel">
         <h2 className="panel__title">Ответы за 14 дней</h2>
         <ActivityChart days={stats.activity} />

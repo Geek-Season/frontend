@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 
 import { getNumberTasks, getNumbers } from '../api.js'
 import { useAuth } from '../auth.jsx'
@@ -12,6 +12,12 @@ const SOURCES = [
   { value: 'demo', label: 'Демо' },
   { value: 'official', label: 'Официальные' },
   { value: 'author', label: 'Авторские' },
+]
+
+const PROGRESS = [
+  { value: '', label: 'Все' },
+  { value: 'unsolved', label: 'Нерешённые' },
+  { value: 'solved', label: 'Решённые' },
 ]
 
 const SORTS = [
@@ -27,6 +33,14 @@ export default function NumberTasksPage() {
   const { user } = useAuth()
   const [source, setSource] = useState('')
   const [sort, setSort] = useState('new')
+  // Фильтр по прогрессу — только для вошедших. Можно открыть страницу сразу
+  // с фильтром: /tasks/16?progress=unsolved (так делает «Потренировать» в профиле).
+  const [searchParams] = useSearchParams()
+  const [progress, setProgress] = useState(() =>
+    ['solved', 'unsolved'].includes(searchParams.get('progress')) ? searchParams.get('progress') : '',
+  )
+  // Вышел из аккаунта — фильтр по прогрессу больше не применим.
+  const progressFilter = user ? progress : ''
 
   const [page, setPage] = useState(null) // { number, total, items }
   const [loading, setLoading] = useState(true)
@@ -46,14 +60,14 @@ export default function NumberTasksPage() {
     let cancelled = false // защита от ответа на устаревший запрос
     setLoading(true)
     setError(null)
-    getNumberTasks(code, { source, sort, limit: PAGE_SIZE })
+    getNumberTasks(code, { source, progress: progressFilter, sort, limit: PAGE_SIZE })
       .then((data) => !cancelled && setPage(data))
       .catch((e) => !cancelled && setError(e.message))
       .finally(() => !cancelled && setLoading(false))
     return () => {
       cancelled = true
     }
-  }, [code, source, sort, user])
+  }, [code, source, progressFilter, sort, user])
 
   // Ученик решил задачу впервые — обновляем счётчик «Решено» без перезагрузки.
   function handleChecked(taskId, isCorrect) {
@@ -72,7 +86,7 @@ export default function NumberTasksPage() {
 
   function loadMore() {
     setLoadingMore(true)
-    getNumberTasks(code, { source, sort, limit: PAGE_SIZE, offset: page.items.length })
+    getNumberTasks(code, { source, progress: progressFilter, sort, limit: PAGE_SIZE, offset: page.items.length })
       .then((data) => setPage({ ...page, items: [...page.items, ...data.items] }))
       .catch((e) => setError(e.message))
       .finally(() => setLoadingMore(false))
@@ -113,6 +127,19 @@ export default function NumberTasksPage() {
             </button>
           ))}
         </div>
+        {user && (
+          <div className="segmented">
+            {PROGRESS.map((p) => (
+              <button
+                key={p.value}
+                className={progressFilter === p.value ? 'active' : ''}
+                onClick={() => setProgress(p.value)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        )}
         <select value={sort} onChange={(e) => setSort(e.target.value)} className="select">
           {SORTS.map((s) => (
             <option key={s.value} value={s.value}>{s.label}</option>
@@ -133,9 +160,7 @@ export default function NumberTasksPage() {
         <>
           <p className="muted small">Найдено задач: {page.total}</p>
           {page.items.length === 0 && (
-            <div className="empty">
-              В этом номере пока нет задач{source ? ' с таким источником' : ''}.
-            </div>
+            <div className="empty">{emptyText(progressFilter, source)}</div>
           )}
           {page.items.map((task, i) => (
             <TaskCard key={task.id} task={task} position={i + 1} onChecked={handleChecked} />
@@ -149,4 +174,12 @@ export default function NumberTasksPage() {
       )}
     </section>
   )
+}
+
+function emptyText(progress, source) {
+  if (progress === 'unsolved') {
+    return source ? 'Нерешённых задач с таким источником нет.' : 'Все задачи решены — отличная работа! 🎉'
+  }
+  if (progress === 'solved') return 'Здесь пока нет решённых задач.'
+  return `В этом номере пока нет задач${source ? ' с таким источником' : ''}.`
 }

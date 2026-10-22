@@ -1,0 +1,89 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+
+import { getRating } from '../api.js'
+import { useAuth } from '../auth.jsx'
+
+const PERIODS = [
+  { value: 'week', label: 'Эта неделя' },
+  { value: 'all', label: 'Всё время' },
+]
+
+// /rating — таблица лидеров. Очко — за каждую задачу, решённую впервые.
+export default function RatingPage() {
+  const { user } = useAuth()
+  const [period, setPeriod] = useState('week')
+  const [rating, setRating] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setError(null)
+    getRating(period)
+      .then((data) => !cancelled && setRating(data))
+      .catch((e) => !cancelled && setError(e.message))
+    return () => {
+      cancelled = true
+    }
+  }, [period, user])
+
+  const meInTop = rating?.top.some((r) => r.is_me)
+
+  return (
+    <section>
+      <div className="page-head">
+        <h1>Рейтинг</h1>
+        <p className="muted">1 очко — за каждую задачу, решённую впервые (в тренировке или в пробнике).</p>
+      </div>
+
+      <div className="toolbar">
+        <div className="segmented">
+          {PERIODS.map((p) => (
+            <button key={p.value} className={period === p.value ? 'active' : ''} onClick={() => setPeriod(p.value)}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {error && <p className="error">{error}</p>}
+      {!rating && !error && <p className="muted">Загрузка…</p>}
+
+      {rating && (
+        <>
+          {rating.top.length === 0 ? (
+            <div className="empty">
+              {period === 'week' ? 'На этой неделе ещё никто не решал.' : 'Пока никто не решал задачи.'}{' '}
+              <Link to="/tasks">Станьте первым →</Link>
+            </div>
+          ) : (
+            <ol className="leaderboard">
+              {rating.top.map((r) => (
+                <li key={r.user_id} className={`leaderboard__row ${r.is_me ? 'is-me' : ''}`}>
+                  <span className={`leaderboard__place place-${r.place}`}>{r.place}</span>
+                  <span className="avatar avatar--small">{r.first_name.slice(0, 1).toUpperCase()}</span>
+                  <span className="leaderboard__name">
+                    {r.first_name}
+                    {r.is_me && <span className="badge badge--me">вы</span>}
+                    {r.username && <span className="muted small"> @{r.username}</span>}
+                  </span>
+                  <span className="leaderboard__points">{r.points}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+
+          <p className="muted small leaderboard__footer">
+            Участников: {rating.participants}.{' '}
+            {!user && <><Link to="/login">Войдите</Link>, чтобы попасть в рейтинг.</>}
+            {user && rating.me && !meInTop && (
+              rating.me.place
+                ? `Ваше место: ${rating.me.place}, очков: ${rating.me.points}.`
+                : 'У вас пока нет очков за этот период — решите задачу, чтобы попасть в таблицу.'
+            )}
+          </p>
+        </>
+      )}
+    </section>
+  )
+}

@@ -46,9 +46,10 @@ export function getNumbers() {
 }
 
 /** Прототипы номера: { number, total, items } */
-export function getNumberTasks(code, { source, sort, limit = 20, offset = 0 } = {}) {
+export function getNumberTasks(code, { source, progress, sort, limit = 20, offset = 0 } = {}) {
   const params = new URLSearchParams({ sort, limit, offset })
   if (source) params.set('source', source)
+  if (progress) params.set('progress', progress) // solved | unsolved — только для вошедших
   return request(`/numbers/${encodeURIComponent(code)}/tasks?${params}`)
 }
 
@@ -87,4 +88,43 @@ export function getMe() {
 /** Статистика вошедшего ученика (см. /docs → Прогресс → /me/stats) */
 export function getMyStats() {
   return request('/me/stats')
+}
+
+// ---------- Пробник ----------
+
+/** Начать пробник или получить уже идущий */
+export function startExam() {
+  return request('/exam/start', { method: 'POST' })
+}
+
+/** Идущий пробник или null, если его нет */
+export function getCurrentExam() {
+  return request('/exam/current')
+}
+
+export function getExam(id) {
+  return request(`/exam/${id}`)
+}
+
+export function getExamHistory() {
+  return request('/exam/history')
+}
+
+/** Автосохранение ответа; пустая строка стирает ответ */
+export function saveExamAnswer(examId, position, answer) {
+  return request(`/exam/${examId}/answers/${position}`, {
+    method: 'PUT',
+    body: JSON.stringify({ answer }),
+  })
+}
+
+export function finishExam(examId) {
+  return request(`/exam/${examId}/finish`, { method: 'POST' })
+}
+
+// ---------- Рейтинг ----------
+
+/** period: 'week' | 'all' */
+export function getRating(period) {
+  return request(`/rating?period=${period}`)
 }
