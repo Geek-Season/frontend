@@ -36,11 +36,22 @@ export default function ExamResultPage() {
         </p>
       </div>
 
-      <div className="tiles tiles--3">
+      <div className="tiles tiles--4">
+        <div className={`tile tile--score ${exam.passed ? 'is-passed' : 'is-failed'}`}>
+          <span className="tile__label">Тестовый балл{exam.test_score_approximate ? ' ≈' : ''}</span>
+          <span className="tile__value">{exam.test_score} <span className="tile__of">из 100</span></span>
+          <span className="tile__hint">
+            {exam.university_passed
+              ? '✓ выше порога для вузов (46)'
+              : exam.passed
+                ? '✓ порог 40 пройден · для вузов нужно 46'
+                : '✗ ниже порога 40'}
+          </span>
+        </div>
         <div className="tile">
           <span className="tile__label">Первичный балл</span>
           <span className="tile__value">{exam.primary_score} <span className="tile__of">из {exam.max_score}</span></span>
-          <span className="tile__hint">{percent}% от максимума</span>
+          <span className="tile__hint">{percent}% от максимума варианта</span>
         </div>
         <div className="tile">
           <span className="tile__label">Верных ответов</span>
@@ -52,6 +63,13 @@ export default function ExamResultPage() {
           <Link to="/profile" className="btn btn--ghost">Что повторить</Link>
         </div>
       </div>
+
+      {exam.test_score_approximate && (
+        <p className="notice">
+          Тестовый балл приблизительный: шкала Рособрнадзора рассчитана на полный вариант
+          (29 первичных баллов), а в этом варианте задачи есть не по всем номерам — максимум {exam.max_score}.
+        </p>
+      )}
 
       <div className="panel">
         <h2 className="panel__title">Разбор</h2>

@@ -61,7 +61,7 @@ function ExamStart({ onStarted }) {
           <li>Время идёт на сервере: закрыть вкладку или перезагрузить страницу можно — таймер не остановится и не сбросится.</li>
           <li>Ответы сохраняются сами, пока вы печатаете. Менять их можно до конца.</li>
           <li>Правильные ответы и разбор — только после завершения.</li>
-          <li>Номера 26 и 27 стоят по 2 первичных балла, остальные — по 1.</li>
+          <li>Номера 26 и 27 стоят по 2 первичных балла, остальные — по 1. Итог переводится в тестовые баллы по шкале Рособрнадзора 2026 года (порог — 40, для вузов — 46).</li>
           <li>Когда время выйдет, пробник завершится автоматически.</li>
         </ul>
         <button className="btn" onClick={begin} disabled={starting}>
@@ -77,7 +77,8 @@ function ExamStart({ onStarted }) {
             {history.map((h) => (
               <li key={h.id} className="recent__row exam-history__row">
                 <span className="exam-history__score">
-                  {h.primary_score} / {h.max_score}
+                  {h.test_score_approximate ? '≈' : ''}{h.test_score}
+                  <span className="muted small"> тест. · {h.primary_score}/{h.max_score} перв.</span>
                 </span>
                 <span className="muted small">{formatDateTime(h.started_at)}</span>
                 <Link to={`/exam/${h.id}`} className="recent__task">Разбор →</Link>

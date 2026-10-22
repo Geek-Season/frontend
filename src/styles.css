@@ -268,7 +268,7 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
 /* ---------- Пробник ---------- */
 .exam-rules ul { margin: 0 0 16px; padding-left: 20px; color: var(--muted); }
 .exam-rules li { margin-bottom: 6px; }
-.exam-history__row { grid-template-columns: 90px 1fr auto; }
+.exam-history__row { grid-template-columns: minmax(170px, auto) 1fr auto; }
 .exam-history__score { font-family: var(--mono); font-weight: 700; }
 
 .exam-bar {
@@ -342,3 +342,11 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
   .nav__user-name { display: none; } /* на телефоне в шапке — только аватар */
   .logo { font-size: 14px; }
 }
+
+/* ---------- Тестовый балл ---------- */
+.tiles--4 { grid-template-columns: repeat(3, 1fr) 1.2fr; }
+@media (max-width: 720px) { .tiles--4 { grid-template-columns: 1fr 1fr; } .tiles--4 .tile--actions { grid-column: 1 / -1; } }
+.tile--score.is-passed { border-color: rgba(62, 207, 142, 0.4); }
+.tile--score.is-passed .tile__hint { color: var(--ok); }
+.tile--score.is-failed { border-color: rgba(242, 102, 122, 0.4); }
+.tile--score.is-failed .tile__hint { color: var(--bad); }
