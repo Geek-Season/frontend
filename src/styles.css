@@ -390,3 +390,19 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
 .achievement__date { color: var(--ok); }
 .achievement.is-received { background: rgba(198, 243, 107, 0.06); border-color: rgba(198, 243, 107, 0.3); }
 .achievement.is-locked { opacity: 0.55; }
+
+/* ---------- Задача 19–21: три вопроса к одной игре ---------- */
+.parts { display: flex; flex-direction: column; gap: 14px; }
+.parts > .btn { align-self: flex-start; }
+.part .answer { flex-wrap: wrap; }
+.part__question { margin: 0 0 10px; line-height: 1.55; white-space: pre-line; }
+.part__number {
+  display: inline-block; min-width: 28px; margin-right: 8px; padding: 1px 6px; border-radius: 6px;
+  background: var(--accent-bg, rgba(124, 92, 255, 0.15)); color: var(--accent); font-weight: 700; text-align: center;
+}
+.part__ok { color: var(--ok); font-weight: 700; }
+.part__bad { color: var(--bad); font-size: 14px; }
+.exam-task__game { margin-bottom: 12px; }
+.exam-task__game summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+.admin-part { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px 4px; margin: 0 0 14px; }
+.admin-part legend { padding: 0 6px; color: var(--accent); font-weight: 700; }

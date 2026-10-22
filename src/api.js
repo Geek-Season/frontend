@@ -58,11 +58,14 @@ export function getNumberTasks(code, { source, progress, sort, limit = 20, offse
   return request(`/numbers/${encodeURIComponent(code)}/tasks?${params}`)
 }
 
-/** Проверка ответа: { is_correct, correct_answer, explanation } */
+/**
+ * Проверка ответа: { is_correct, correct_answer, explanation, parts }.
+ * answer — строка для обычной задачи или объект {"19": "…", "20": "…", "21": "…"} для 19–21.
+ */
 export function checkAnswer(taskId, answer) {
   return request(`/tasks/${taskId}/check`, {
     method: 'POST',
-    body: JSON.stringify({ answer }),
+    body: JSON.stringify(typeof answer === 'string' ? { answer } : { answers: answer }),
   })
 }
 
