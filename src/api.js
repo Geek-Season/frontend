@@ -81,3 +81,10 @@ export function loginWithCode(code) {
 export function getMe() {
   return request('/auth/me')
 }
+
+// ---------- Прогресс ----------
+
+/** Статистика вошедшего ученика (см. /docs → Прогресс → /me/stats) */
+export function getMyStats() {
+  return request('/me/stats')
+}

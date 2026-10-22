@@ -1,9 +1,19 @@
+import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
+import { getMyStats } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import ActivityChart from '../components/ActivityChart.jsx'
 
 export default function ProfilePage() {
   const { user, checking, logout } = useAuth()
+  const [stats, setStats] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!user) return
+    getMyStats().then(setStats).catch((e) => setError(e.message))
+  }, [user])
 
   if (checking) return <p className="muted">Загрузка…</p>
   if (!user) return <Navigate to="/login" replace />
@@ -17,19 +27,116 @@ export default function ProfilePage() {
     <section>
       <div className="profile">
         <div className="avatar">{user.first_name.slice(0, 1).toUpperCase()}</div>
-        <div>
+        <div className="profile__info">
           <h1>{fullName}</h1>
           {user.username && <p className="muted">@{user.username}</p>}
           <p className="muted small">На сайте с {joined}</p>
         </div>
+        <button className="btn btn--ghost" onClick={logout}>Выйти</button>
       </div>
 
-      <div className="placeholder">
-        <p>Здесь появится ваш прогресс: решённые задачи, слабые темы и пробники.</p>
-        <Link to="/tasks" className="btn">Решать задания</Link>
-      </div>
-
-      <button className="btn btn--ghost" onClick={logout}>Выйти</button>
+      {error && <p className="error">Не удалось загрузить статистику: {error}</p>}
+      {!stats && !error && <p className="muted">Загрузка статистики…</p>}
+      {stats && (stats.total_attempts === 0 ? <EmptyStats /> : <Stats stats={stats} />)}
     </section>
   )
+}
+
+function EmptyStats() {
+  return (
+    <div className="placeholder">
+      <p>Вы ещё не решали задачи. Здесь появится статистика: решённые задачи, точность и прогресс по номерам.</p>
+      <Link to="/tasks" className="btn">Решать задания</Link>
+    </div>
+  )
+}
+
+function Stats({ stats }) {
+  const accuracy = stats.accuracy === null ? '—' : `${Math.round(stats.accuracy * 100)}%`
+  const started = stats.by_number.filter((n) => n.tasks_count > 0)
+
+  return (
+    <>
+      <div className="tiles">
+        <Tile label="Решено задач" value={stats.solved_tasks} hint={`из ${stats.total_tasks} в банке`} />
+        <Tile
+          label="Точность"
+          value={accuracy}
+          hint={`${stats.correct_attempts} верных из ${stats.total_attempts}`}
+        />
+        <Tile label="Серия" value={dayWord(stats.streak_days)} hint="подряд без пропусков" />
+        <Tile label="Всего ответов" value={stats.total_attempts} hint={`за ${dayWord(stats.active_days)}`} />
+      </div>
+
+      <div className="panel">
+        <h2 className="panel__title">Ответы за 14 дней</h2>
+        <ActivityChart days={stats.activity} />
+      </div>
+
+      <div className="panel">
+        <h2 className="panel__title">Прогресс по номерам</h2>
+        <div className="number-progress">
+          {started.map((n) => (
+            <Link key={n.code} to={`/tasks/${n.code}`} className="number-progress__row">
+              <span className="number-progress__code">{n.code}</span>
+              <span className="number-progress__title">{n.title}</span>
+              <span className="progress progress--wide">
+                <span style={{ width: `${(n.solved / n.tasks_count) * 100}%` }} />
+              </span>
+              <span className="number-progress__value">{n.solved} / {n.tasks_count}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="panel">
+        <h2 className="panel__title">Последние ответы</h2>
+        <ul className="recent">
+          {stats.recent.map((a, i) => (
+            <li key={i} className="recent__row">
+              <span className={`recent__mark ${a.is_correct ? 'ok' : 'bad'}`}>
+                {a.is_correct ? '✓ верно' : '✗ неверно'}
+              </span>
+              <Link to={`/tasks/${a.exam_number}`} className="recent__task">
+                № {a.exam_number} · задача {a.task_id}
+              </Link>
+              <code className="recent__answer">{a.answer}</code>
+              <span className="muted small">{timeAgo(a.created_at)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  )
+}
+
+function Tile({ label, value, hint }) {
+  return (
+    <div className="tile">
+      <span className="tile__label">{label}</span>
+      <span className="tile__value">{value}</span>
+      <span className="tile__hint">{hint}</span>
+    </div>
+  )
+}
+
+function plural(n, one, few, many) {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
+  return many
+}
+
+function dayWord(n) {
+  return `${n} ${plural(n, 'день', 'дня', 'дней')}`
+}
+
+function timeAgo(iso) {
+  const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000)
+  if (minutes < 1) return 'только что'
+  if (minutes < 60) return `${minutes} мин назад`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours} ч назад`
+  return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
 }

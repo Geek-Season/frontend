@@ -2,21 +2,28 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { getNumbers } from '../api.js'
+import { useAuth } from '../auth.jsx'
 
 // Страница «Задания»: сетка карточек с номерами ЕГЭ.
 export default function NumbersPage() {
+  const { user } = useAuth()
   const [numbers, setNumbers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [query, setQuery] = useState('')
 
-  // useEffect с [] выполняется один раз — когда страница открылась.
+  // Загружаем при открытии страницы и заново — когда ученик вошёл или вышел
+  // (у вошедшего в ответе есть solved — сколько задач номера он решил).
   useEffect(() => {
+    let cancelled = false // ответ на устаревший запрос не должен перезаписать свежий
     getNumbers()
-      .then(setNumbers)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [])
+      .then((data) => !cancelled && setNumbers(data))
+      .catch((e) => !cancelled && setError(e.message))
+      .finally(() => !cancelled && setLoading(false))
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   const q = query.trim().toLowerCase()
   const visible = numbers.filter(
@@ -48,14 +55,21 @@ export default function NumbersPage() {
           <Link key={n.code} to={`/tasks/${n.code}`} className="number-card">
             <span className="number-card__code">{n.code}</span>
             <span className="number-card__title">{n.title}</span>
-            {/* Полоска прогресса заработает, когда сайт начнёт запоминать решения. */}
-            <span className="progress"><span style={{ width: '0%' }} /></span>
-            <span className="number-card__count">{taskWord(n.tasks_count)}</span>
+            <span className="progress" title={user ? `Решено ${n.solved} из ${n.tasks_count}` : undefined}>
+              <span style={{ width: `${percent(n.solved, n.tasks_count)}%` }} />
+            </span>
+            <span className="number-card__count">
+              {user ? `${n.solved} / ${n.tasks_count}` : taskWord(n.tasks_count)}
+            </span>
           </Link>
         ))}
       </div>
     </section>
   )
+}
+
+function percent(part, total) {
+  return total ? Math.round((part / total) * 100) : 0
 }
 
 function taskWord(count) {

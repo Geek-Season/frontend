@@ -29,21 +29,23 @@ function storeToken(token) {
 }
 
 export function AuthProvider({ children }) {
+  // Токен подставляем в api.js сразу, ещё до первой отрисовки:
+  // иначе страницы успеют отправить первые запросы «анонимно».
+  const [savedToken] = useState(() => {
+    const token = readStoredToken()
+    setAuthToken(token)
+    return token
+  })
   const [user, setUser] = useState(null)
-  const [checking, setChecking] = useState(true) // проверяем сохранённый токен
+  const [checking, setChecking] = useState(Boolean(savedToken)) // проверяем сохранённый токен
 
   useEffect(() => {
-    const token = readStoredToken()
-    if (!token) {
-      setChecking(false)
-      return
-    }
-    setAuthToken(token)
+    if (!savedToken) return
     getMe()
       .then(setUser)
       .catch(() => logout())
       .finally(() => setChecking(false))
-  }, [])
+  }, [savedToken])
 
   function login(token, userData) {
     storeToken(token)

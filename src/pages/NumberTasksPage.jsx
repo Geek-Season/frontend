@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { getNumberTasks, getNumbers } from '../api.js'
+import { useAuth } from '../auth.jsx'
 import TaskCard from '../components/TaskCard.jsx'
 
 const PAGE_SIZE = 20
@@ -23,6 +24,7 @@ const SORTS = [
 // Страница прототипов одного номера: /tasks/17
 export default function NumberTasksPage() {
   const { code } = useParams()
+  const { user } = useAuth()
   const [source, setSource] = useState('')
   const [sort, setSort] = useState('new')
 
@@ -51,7 +53,22 @@ export default function NumberTasksPage() {
     return () => {
       cancelled = true
     }
-  }, [code, source, sort])
+  }, [code, source, sort, user])
+
+  // Ученик решил задачу впервые — обновляем счётчик «Решено» без перезагрузки.
+  function handleChecked(taskId, isCorrect) {
+    setPage((current) => {
+      const task = current.items.find((t) => t.id === taskId)
+      const firstSolve = isCorrect && task.status !== 'solved'
+      return {
+        ...current,
+        number: firstSolve ? { ...current.number, solved: current.number.solved + 1 } : current.number,
+        items: current.items.map((t) =>
+          t.id === taskId ? { ...t, status: isCorrect || t.status === 'solved' ? 'solved' : 'failed' } : t,
+        ),
+      }
+    })
+  }
 
   function loadMore() {
     setLoadingMore(true)
@@ -71,7 +88,12 @@ export default function NumberTasksPage() {
         <Link to="/tasks" className="back" aria-label="К списку номеров">←</Link>
         <div className="number-head__title">
           <h1>№ {code}</h1>
-          {page && <p className="muted">{page.number.title}</p>}
+          {page && (
+            <p className="muted">
+              {page.number.title}
+              {user && ` · решено ${page.number.solved} из ${page.number.tasks_count}`}
+            </p>
+          )}
         </div>
         <div className="number-head__nav">
           {prev ? <Link to={`/tasks/${prev}`} className="chip">‹ {prev}</Link> : null}
@@ -98,6 +120,12 @@ export default function NumberTasksPage() {
         </select>
       </div>
 
+      {!user && (
+        <div className="notice">
+          <Link to="/login">Войдите</Link>, чтобы ответы сохранялись в статистику.
+        </div>
+      )}
+
       {loading && <p className="muted">Загрузка…</p>}
       {error && <p className="error">{error}</p>}
 
@@ -110,7 +138,7 @@ export default function NumberTasksPage() {
             </div>
           )}
           {page.items.map((task, i) => (
-            <TaskCard key={task.id} task={task} position={i + 1} />
+            <TaskCard key={task.id} task={task} position={i + 1} onChecked={handleChecked} />
           ))}
           {page.items.length < page.total && (
             <button className="btn btn--ghost wide" onClick={loadMore} disabled={loadingMore}>

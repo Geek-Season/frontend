@@ -3,9 +3,10 @@ import { useState } from 'react'
 import { checkAnswer } from '../api.js'
 
 const SOURCE_LABELS = { demo: 'Демо', official: 'Экзамен', author: 'Авторская' }
+const STATUS_LABELS = { solved: '✓ Решена', failed: '✗ Не решена' }
 
 // Одна задача: условие, поле ответа, кнопка «Проверить» и результат.
-export default function TaskCard({ task, position }) {
+export default function TaskCard({ task, position, onChecked }) {
   const [answer, setAnswer] = useState('')
   const [result, setResult] = useState(null) // ответ бэкенда после проверки
   const [checking, setChecking] = useState(false)
@@ -17,7 +18,9 @@ export default function TaskCard({ task, position }) {
     setChecking(true)
     setError(null)
     try {
-      setResult(await checkAnswer(task.id, answer.trim()))
+      const checked = await checkAnswer(task.id, answer.trim())
+      setResult(checked)
+      onChecked?.(task.id, checked.is_correct)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -26,13 +29,16 @@ export default function TaskCard({ task, position }) {
   }
 
   return (
-    <article className="task">
+    <article className={`task ${task.status === 'solved' ? 'task--solved' : ''}`}>
       <div className="task__meta">
         <span className="task__pos">#{position}</span>
         <span className={`badge badge--${task.source}`}>
           {task.source_label || SOURCE_LABELS[task.source]}
         </span>
         <span className="badge">сложность {task.difficulty}/100</span>
+        {task.status && (
+          <span className={`badge badge--status-${task.status}`}>{STATUS_LABELS[task.status]}</span>
+        )}
         <span className="task__id">id {task.id}</span>
       </div>
 
