@@ -86,11 +86,17 @@ export default function ExamResultPage() {
               <span className="review__points muted small">{i.is_correct ? i.points : 0}/{i.points}</span>
             </summary>
             <p className="task__statement">{i.statement}</p>
+            {i.question && <p className="part__question"><span className="part__number">{i.exam_number}</span>{i.question}</p>}
             {i.explanation && <p className="verdict__explanation">{i.explanation}</p>}
-            <Link to={`/tasks/${i.exam_number}`} className="small">Задачи номера {i.exam_number} →</Link>
+            <Link to={`/tasks/${cardCode(i)}`} className="small">Задачи номера {cardCode(i)} →</Link>
           </details>
         ))}
       </div>
     </section>
   )
+}
+
+// Части 19, 20, 21 живут на одной карточке «19-21».
+function cardCode(item) {
+  return item.question ? '19-21' : item.exam_number
 }

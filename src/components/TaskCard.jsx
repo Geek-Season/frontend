@@ -6,19 +6,25 @@ const SOURCE_LABELS = { demo: 'Демо', official: 'Экзамен', author: '�
 const STATUS_LABELS = { solved: '✓ Решена', failed: '✗ Не решена' }
 
 // Одна задача: условие, поле ответа, кнопка «Проверить» и результат.
+// У задачи 19–21 вместо одного поля — три вопроса со своими полями (task.parts).
 export default function TaskCard({ task, position, onChecked }) {
+  const hasParts = task.parts?.length > 0
   const [answer, setAnswer] = useState('')
+  const [partAnswers, setPartAnswers] = useState(() => Object.fromEntries((task.parts ?? []).map((p) => [p.number, ''])))
   const [result, setResult] = useState(null) // ответ бэкенда после проверки
   const [checking, setChecking] = useState(false)
   const [error, setError] = useState(null)
 
   async function handleSubmit(event) {
     event.preventDefault() // не перезагружать страницу при отправке формы
-    if (!answer.trim()) return
+    if (!canSubmit) return
     setChecking(true)
     setError(null)
     try {
-      const checked = await checkAnswer(task.id, answer.trim())
+      const payload = hasParts
+        ? Object.fromEntries(Object.entries(partAnswers).map(([n, v]) => [n, v.trim()]))
+        : answer.trim()
+      const checked = await checkAnswer(task.id, payload)
       setResult(checked)
       onChecked?.(task.id, checked.is_correct)
     } catch (e) {
@@ -27,6 +33,9 @@ export default function TaskCard({ task, position, onChecked }) {
       setChecking(false)
     }
   }
+
+  const canSubmit = hasParts ? Object.values(partAnswers).some((v) => v.trim()) : Boolean(answer.trim())
+  const partResult = (number) => result?.parts?.find((p) => p.number === number)
 
   return (
     <article className={`task ${task.status === 'solved' ? 'task--solved' : ''}`}>
@@ -45,6 +54,42 @@ export default function TaskCard({ task, position, onChecked }) {
       <p className="task__statement">{task.statement}</p>
       {task.image_url && <img className="task__image" src={task.image_url} alt="Иллюстрация к задаче" />}
 
+      {hasParts ? (
+        <form className="parts" onSubmit={handleSubmit}>
+          {task.parts.map((p) => {
+            const r = partResult(p.number)
+            return (
+              <div key={p.number} className="part">
+                <p className="part__question"><span className="part__number">{p.number}</span>{p.question}</p>
+                <div className="answer">
+                  <label className="answer__label" htmlFor={`answer-${task.id}-${p.number}`}>Ответ {p.number}</label>
+                  <input
+                    id={`answer-${task.id}-${p.number}`}
+                    className={`answer__input ${r ? (r.is_correct ? 'ok' : 'bad') : ''}`}
+                    value={partAnswers[p.number]}
+                    onChange={(e) => {
+                      setPartAnswers((a) => ({ ...a, [p.number]: e.target.value }))
+                      setResult(null)
+                    }}
+                    placeholder="—"
+                    maxLength={100}
+                    autoComplete="off"
+                  />
+                  {r && (
+                    <span className={r.is_correct ? 'part__ok' : 'part__bad'}>
+                      {r.is_correct ? '✓' : <>✗ правильно: <code>{r.correct_answer}</code></>}
+                    </span>
+                  )}
+                </div>
+                {r?.explanation && <p className="verdict__explanation">{r.explanation}</p>}
+              </div>
+            )
+          })}
+          <button className="btn" disabled={!canSubmit || checking}>
+            {checking ? 'Проверяем…' : 'Проверить'}
+          </button>
+        </form>
+      ) : (
       <form className="answer" onSubmit={handleSubmit}>
         <label className="answer__label" htmlFor={`answer-${task.id}`}>Ответ</label>
         <input
@@ -58,17 +103,24 @@ export default function TaskCard({ task, position, onChecked }) {
           placeholder="—"
           autoComplete="off"
         />
-        <button className="btn" disabled={!answer.trim() || checking}>
+        <button className="btn" disabled={!canSubmit || checking}>
           {checking ? 'Проверяем…' : 'Проверить'}
         </button>
       </form>
+      )}
 
       {error && <p className="error">{error}</p>}
 
       {result && (
         <div className={`verdict ${result.is_correct ? 'verdict--ok' : 'verdict--bad'}`}>
-          <strong>{result.is_correct ? 'Верно!' : 'Неверно.'}</strong>{' '}
-          {!result.is_correct && <>Правильный ответ: <code>{result.correct_answer}</code></>}
+          <strong>
+            {result.is_correct
+              ? 'Верно!'
+              : hasParts
+                ? `Верно ${result.parts.filter((p) => p.is_correct).length} из ${result.parts.length}.`
+                : 'Неверно.'}
+          </strong>{' '}
+          {!result.is_correct && !hasParts && <>Правильный ответ: <code>{result.correct_answer}</code></>}
           {result.explanation && <p className="verdict__explanation">{result.explanation}</p>}
         </div>
       )}

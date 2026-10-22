@@ -196,7 +196,16 @@ function ExamRun({ exam }) {
             <span className="badge">{i.title}</span>
             <span className="badge">{i.points === 2 ? '2 балла' : '1 балл'}</span>
           </div>
-          <p className="task__statement">{i.statement}</p>
+          {i.question && i.exam_number !== '19' ? (
+            // 20 и 21 — к той же игре, что и 19: условие свёрнуто, чтобы не повторять его трижды.
+            <details className="exam-task__game">
+              <summary>Условие игры (из задания 19)</summary>
+              <p className="task__statement">{i.statement}</p>
+            </details>
+          ) : (
+            <p className="task__statement">{i.statement}</p>
+          )}
+          {i.question && <p className="part__question"><span className="part__number">{i.exam_number}</span>{i.question}</p>}
           {i.image_url && <img className="task__image" src={i.image_url} alt="Иллюстрация к задаче" />}
           <div className="answer">
             <label className="answer__label" htmlFor={`exam-${i.position}`}>Ответ</label>

@@ -14,6 +14,10 @@ const EMPTY = {
   image_url: '',
 }
 
+// Номер, где задача = общее условие игры + три вопроса со своими ответами.
+const PART_NUMBERS = { '19-21': ['19', '20', '21'] }
+const emptyParts = (numbers) => numbers.map((number) => ({ number, question: '', correct_answer: '', explanation: '' }))
+
 const SOURCES = [
   { value: 'author', label: 'Авторская' },
   { value: 'demo', label: 'Демоверсия' },
@@ -163,9 +167,18 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const isNew = !initial.id
+  const numberCode = isNew ? code : form.exam_number
+  const partNumbers = PART_NUMBERS[numberCode]
+  const [parts, setParts] = useState(() =>
+    partNumbers ? (initial.parts?.length ? initial.parts.map((p) => ({ ...p })) : emptyParts(partNumbers)) : [],
+  )
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
+  }
+
+  function setPart(index, field, value) {
+    setParts((list) => list.map((p, i) => (i === index ? { ...p, [field]: value } : p)))
   }
 
   async function submit(event) {
@@ -173,14 +186,24 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
     setSaving(true)
     setError(null)
     const data = {
-      exam_number: isNew ? code : form.exam_number,
+      exam_number: numberCode,
       statement: form.statement.trim(),
-      correct_answer: form.correct_answer.trim(),
       explanation: form.explanation.trim(),
       source: form.source,
       source_label: form.source_label.trim() || null,
       difficulty: Number(form.difficulty),
       image_url: form.image_url.trim() || null,
+    }
+    if (partNumbers) {
+      // Ответ задачи 19–21 сервер соберёт сам из ответов частей.
+      data.parts = parts.map((p) => ({
+        number: p.number,
+        question: p.question.trim(),
+        correct_answer: p.correct_answer.trim(),
+        explanation: (p.explanation ?? '').trim(),
+      }))
+    } else {
+      data.correct_answer = form.correct_answer.trim()
     }
     try {
       const task = isNew ? await createTask(data) : await updateTask(initial.id, data)
@@ -198,11 +221,32 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
       </h2>
 
       <label className="field">
-        <span>Условие *</span>
+        <span>{partNumbers ? 'Условие игры (общее для 19, 20, 21) *' : 'Условие *'}</span>
         <textarea rows={5} required value={form.statement} onChange={(e) => set('statement', e.target.value)} />
       </label>
 
+      {partNumbers && parts.map((p, index) => (
+        <fieldset key={p.number} className="admin-part">
+          <legend>Задание {p.number}</legend>
+          <label className="field">
+            <span>Вопрос *</span>
+            <textarea rows={3} required value={p.question} onChange={(e) => setPart(index, 'question', e.target.value)} />
+          </label>
+          <div className="field-row">
+            <label className="field">
+              <span>Ответ *</span>
+              <input required maxLength={100} value={p.correct_answer} onChange={(e) => setPart(index, 'correct_answer', e.target.value)} placeholder="28 48" />
+            </label>
+            <label className="field">
+              <span>Разбор</span>
+              <input value={p.explanation ?? ''} onChange={(e) => setPart(index, 'explanation', e.target.value)} />
+            </label>
+          </div>
+        </fieldset>
+      ))}
+
       <div className="field-row">
+        {!partNumbers && (
         <label className="field">
           <span>Правильный ответ *</span>
           <input
@@ -214,6 +258,7 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
           />
           <small className="muted">Несколько чисел — через пробел, порядок важен</small>
         </label>
+        )}
         <label className="field">
           <span>Сложность (0–100)</span>
           <input type="number" min={0} max={100} value={form.difficulty} onChange={(e) => set('difficulty', e.target.value)} />
