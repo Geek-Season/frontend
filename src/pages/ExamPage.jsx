@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { finishExam, getCurrentExam, getExamHistory, saveExamAnswer, startExam } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import TaskMedia from '../components/TaskMedia.jsx'
 
 // /exam — пробник: экран старта или идущий пробник.
 // Время считает сервер; страница только показывает отсчёт. Перезагрузка
@@ -201,12 +202,15 @@ function ExamRun({ exam }) {
             <details className="exam-task__game">
               <summary>Условие игры (из задания 19)</summary>
               <p className="task__statement">{i.statement}</p>
+              <TaskMedia task={i} />
             </details>
           ) : (
-            <p className="task__statement">{i.statement}</p>
+            <>
+              <p className="task__statement">{i.statement}</p>
+              <TaskMedia task={i} />
+            </>
           )}
           {i.question && <p className="part__question"><span className="part__number">{i.exam_number}</span>{i.question}</p>}
-          {i.image_url && <img className="task__image" src={i.image_url} alt="Иллюстрация к задаче" />}
           <div className="answer">
             <label className="answer__label" htmlFor={`exam-${i.position}`}>Ответ</label>
             <input

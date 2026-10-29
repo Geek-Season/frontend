@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 
 import { getExam } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import TaskMedia from '../components/TaskMedia.jsx'
 
 // /exam/12 — результат пробника и разбор каждой задачи.
 export default function ExamResultPage() {
@@ -86,6 +87,7 @@ export default function ExamResultPage() {
               <span className="review__points muted small">{i.is_correct ? i.points : 0}/{i.points}</span>
             </summary>
             <p className="task__statement">{i.statement}</p>
+            <TaskMedia task={i} />
             {i.question && <p className="part__question"><span className="part__number">{i.exam_number}</span>{i.question}</p>}
             {i.explanation && <p className="verdict__explanation">{i.explanation}</p>}
             <Link to={`/tasks/${cardCode(i)}`} className="small">Задачи номера {cardCode(i)} →</Link>

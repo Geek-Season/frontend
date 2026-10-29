@@ -17,7 +17,8 @@ export class ApiError extends Error {
 }
 
 async function request(path, options = {}) {
-  const headers = { 'Content-Type': 'application/json' }
+  // Файлы уходят формой (FormData): заголовок с границей частей браузер поставит сам.
+  const headers = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }
   if (authToken) headers.Authorization = `Bearer ${authToken}`
 
   const response = await fetch(BASE + path, { headers, ...options })
@@ -155,6 +156,28 @@ export function updateTask(id, data) {
 /** Убрать в архив (задача пропадёт из списков, статистика сохранится) */
 export function archiveTask(id) {
   return request(`/tasks/${id}`, { method: 'DELETE' })
+}
+
+/**
+ * Загрузить к задаче картинку (kind = 'image') или файл к заданию (kind = 'attachment').
+ * Ответ: { id, kind, name, url, size, content_type }
+ */
+export function uploadTaskFile(taskId, file, kind) {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('kind', kind)
+  return request(`/tasks/${taskId}/files`, { method: 'POST', body: form })
+}
+
+export function deleteTaskFile(taskId, fileId) {
+  return request(`/tasks/${taskId}/files/${fileId}`, { method: 'DELETE' })
+}
+
+// ---------- Картинки и файлы ----------
+
+/** Полный адрес картинки или файла: API отдаёт путь вида /files/…, сайт ходит к API через /api */
+export function fileUrl(file) {
+  return BASE + file.url
 }
 
 // ---------- Достижения ----------
