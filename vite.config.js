@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react'
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://127.0.0.1:8000'
 
 export default defineConfig({
+  // Путь, по которому сайт открывается. На GitHub Pages проекта — /<имя репозитория>/
+  // (задаётся в .github/workflows/deploy.yml), локально — корень.
+  base: process.env.VITE_BASE ?? '/',
   plugins: [react()],
   server: {
     // Явный адрес: на Windows «localhost» иногда не открывается.

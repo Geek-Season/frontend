@@ -26,7 +26,8 @@ import './styles.css'
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
-      <BrowserRouter>
+      {/* На GitHub Pages сайт живёт не в корне, а в /frontend/ — роутеру нужен этот префикс. */}
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/+$/, '') || '/'}>
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Navigate to="/tasks" replace />} />

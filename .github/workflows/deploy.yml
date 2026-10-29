@@ -1,0 +1,64 @@
+# Сборка сайта и выкладка на GitHub Pages при каждом изменении main.
+#
+# Один раз настроить в репозитории на GitHub:
+#   1. Settings → Pages → Build and deployment → Source: GitHub Actions
+#   2. Settings → Secrets and variables → Actions → вкладка Variables → New repository variable:
+#        API_URL = адрес бэкенда на Netrun, например https://neyman-inf.netrun.io
+#
+# Сайт откроется по адресу https://<организация>.github.io/<репозиторий>/
+# (для Geek-Season/frontend — https://geek-season.github.io/frontend/).
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # кнопка «Run workflow» — пересобрать вручную, например после смены API_URL
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Проверить, что задан адрес API
+        if: vars.API_URL == ''
+        run: |
+          echo "::error::Не задана переменная API_URL (Settings → Secrets and variables → Actions → Variables)"
+          exit 1
+
+      - run: npm ci
+
+      - name: Сборка
+        run: npm run build:pages
+        env:
+          VITE_API_URL: ${{ vars.API_URL }}
+          VITE_BASE: /${{ github.event.repository.name }}/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
