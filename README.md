@@ -30,6 +30,31 @@ npm run build     # сборка в dist/
 
 Запросы к `/api/*` проксируются на backend (`vite.config.js`); адрес backend задаётся переменной `BACKEND_URL`.
 
+## Деплой на GitHub Pages
+
+Сайт собирается и выкладывается сам при каждом изменении `main` (`.github/workflows/deploy.yml`)
+и открывается по адресу <https://geek-season.github.io/frontend/>.
+
+Один раз настроить в репозитории на GitHub:
+
+1. **Settings → Pages → Build and deployment → Source:** GitHub Actions.
+2. **Settings → Secrets and variables → Actions → Variables → New repository variable:**
+   `API_URL` = адрес backend на Netrun, например `https://neyman-inf.netrun.io` (без `/` в конце).
+3. На backend в секретах Netrun: `CORS_ORIGINS=https://geek-season.github.io` — иначе браузер
+   не пустит сайт к API.
+4. **Actions → Deploy to GitHub Pages → Run workflow** (или любой push в `main`).
+
+Поменялся адрес API — измени `API_URL` и снова нажми **Run workflow**.
+
+| Переменная сборки | Что задаёт |
+|---|---|
+| `VITE_API_URL` | Адрес API. Не задан — `/api` (прокси Vite при разработке) |
+| `VITE_BASE` | Путь сайта. На Pages — `/frontend/`, локально — `/` |
+
+Проверить сборку как на Pages: `VITE_API_URL=http://127.0.0.1:8000 VITE_BASE=/frontend/ npm run build:pages`.
+Внутренние страницы (например, `/frontend/tasks/17`) открываются по прямой ссылке через `404.html` —
+копию `index.html`, которую GitHub Pages отдаёт для неизвестных путей.
+
 ## Структура
 
 ```

@@ -1,7 +1,10 @@
 // Все обращения к бэкенду собраны здесь.
 // Страницы не знают адресов API — они просто вызывают эти функции.
 
-const BASE = '/api'
+// Адрес API. При разработке — /api: Vite пересылает такие запросы бэкенду (vite.config.js).
+// На GitHub Pages сайт и API на разных адресах: адрес API задаётся при сборке
+// переменной VITE_API_URL, например https://neyman-inf.netrun.io
+const BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')
 
 // Токен вошедшего пользователя. Его выставляет auth.jsx после входа.
 let authToken = null
