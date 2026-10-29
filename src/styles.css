@@ -356,13 +356,13 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
 .success { color: var(--ok); }
 .btn--danger { background: var(--bad); color: #fff; }
 .admin-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-.admin-list__row { display: grid; grid-template-columns: 56px 1fr auto auto; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.admin-list__row { display: grid; grid-template-columns: 56px 1fr auto auto auto; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
 .admin-list__row:last-child { border-bottom: 0; }
 .admin-list__text { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .admin-list__actions { display: flex; gap: 6px; }
 @media (max-width: 620px) {
   .admin-list__row { grid-template-columns: 1fr auto; }
-  .admin-list__row .task__id, .admin-list__row .badge { display: none; }
+  .admin-list__row .task__id, .admin-list__row .badge, .admin-list__row .admin-list__files { display: none; }
   .admin-list__actions { grid-column: 1 / -1; }
 }
 
@@ -406,3 +406,41 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
 .exam-task__game summary { cursor: pointer; color: var(--muted); font-size: 14px; }
 .admin-part { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px 4px; margin: 0 0 14px; }
 .admin-part legend { padding: 0 6px; color: var(--accent); font-weight: 700; }
+
+/* ---------- Картинки и файлы к задаче ---------- */
+.task-media { display: grid; gap: 10px; margin-bottom: 14px; }
+.task-media .task__image { display: block; margin: 0; }
+.task-media__image { display: block; width: fit-content; max-width: 100%; }
+.attachments { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.attachment {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--border);
+  border-radius: 10px; background: var(--surface-2); color: var(--text); text-decoration: none;
+}
+.attachment:hover, .attachment:focus-visible { border-color: var(--accent); }
+.attachment__icon { font-size: 18px; }
+.attachment__name { font-family: var(--mono); font-size: 14px; overflow-wrap: anywhere; }
+.attachment__size { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.attachment__action { margin-left: auto; color: var(--accent-strong); font-size: 13px; font-weight: 600; }
+
+/* ---------- Файлы в редакторе ---------- */
+.admin-files { border: 1px dashed var(--border); border-radius: 10px; padding: 10px 14px 12px; margin: 0; transition: border-color .15s, background .15s; }
+.admin-files.is-dragging { border-color: var(--accent); background: rgba(139, 124, 246, 0.08); }
+.admin-files legend { padding: 0 6px; color: var(--text); font-size: 13px; font-weight: 600; }
+.admin-files__hint { margin: 0 0 10px; }
+.admin-files__list { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; }
+.admin-file { display: grid; grid-template-columns: 48px 1fr auto auto; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); }
+.admin-file.is-new { outline: 1px solid rgba(198, 243, 107, 0.35); }
+.admin-file.is-removed { opacity: 0.5; }
+.admin-file.is-removed .admin-file__name { text-decoration: line-through; }
+.admin-file__thumb { width: 48px; height: 36px; object-fit: contain; border-radius: 4px; background: #fff; }
+.admin-file__icon { width: 48px; text-align: center; font-size: 20px; }
+.admin-file__name { font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-files__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.admin-list__files { white-space: nowrap; }
+.admin-form__legacy summary { cursor: pointer; }
+.admin-form__legacy .field { margin-top: 8px; }
+@media (max-width: 520px) {
+  .admin-file { grid-template-columns: 40px 1fr auto; }
+  .admin-file > .muted { display: none; }
+  .attachment__size { display: none; }
+}

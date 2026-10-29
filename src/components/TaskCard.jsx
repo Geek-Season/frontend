@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { checkAnswer } from '../api.js'
+import TaskMedia from './TaskMedia.jsx'
 
 const SOURCE_LABELS = { demo: 'Демо', official: 'Экзамен', author: 'Авторская' }
 const STATUS_LABELS = { solved: '✓ Решена', failed: '✗ Не решена' }
@@ -52,7 +53,7 @@ export default function TaskCard({ task, position, onChecked }) {
       </div>
 
       <p className="task__statement">{task.statement}</p>
-      {task.image_url && <img className="task__image" src={task.image_url} alt="Иллюстрация к задаче" />}
+      <TaskMedia task={task} />
 
       {hasParts ? (
         <form className="parts" onSubmit={handleSubmit}>
@@ -101,6 +102,7 @@ export default function TaskCard({ task, position, onChecked }) {
             setResult(null)
           }}
           placeholder="—"
+          maxLength={100}
           autoComplete="off"
         />
         <button className="btn" disabled={!canSubmit || checking}>

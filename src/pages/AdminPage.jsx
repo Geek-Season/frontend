@@ -1,8 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 
-import { archiveTask, createTask, getNumberTasks, getNumbers, getTaskFull, updateTask } from '../api.js'
+import {
+  archiveTask,
+  createTask,
+  deleteTaskFile,
+  fileUrl,
+  getNumberTasks,
+  getNumbers,
+  getTaskFull,
+  updateTask,
+  uploadTaskFile,
+} from '../api.js'
 import { useAuth } from '../auth.jsx'
+import { fileIcon, formatSize } from '../components/TaskMedia.jsx'
 
 const EMPTY = {
   statement: '',
@@ -17,6 +28,28 @@ const EMPTY = {
 // Номер, где задача = общее условие игры + три вопроса со своими ответами.
 const PART_NUMBERS = { '19-21': ['19', '20', '21'] }
 const emptyParts = (numbers) => numbers.map((number) => ({ number, question: '', correct_answer: '', explanation: '' }))
+
+// Картинки и файлы к задаче. Те же ограничения проверяет сервер — здесь они,
+// чтобы сразу подсказать, а не после нажатия «Сохранить».
+const FILE_KINDS = {
+  image: {
+    title: 'Картинки',
+    hint: 'PNG, JPEG, GIF или WebP до 5 МБ. Показываются ученику под условием. Скриншот можно вставить через Ctrl+V.',
+    accept: 'image/png,image/jpeg,image/gif,image/webp',
+    extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
+    maxMb: 5,
+    add: '+ Добавить картинку',
+  },
+  attachment: {
+    title: 'Файлы к заданию',
+    hint: 'xlsx, xls, ods, csv, txt, docx, doc, odt, pdf, zip до 20 МБ. Ученик скачивает их, как на ЕГЭ (номера 3, 9, 10, 17, 18, 22, 24, 26, 27).',
+    accept: '.xlsx,.xls,.ods,.csv,.txt,.docx,.doc,.odt,.pdf,.zip',
+    extensions: ['xlsx', 'xls', 'ods', 'csv', 'txt', 'docx', 'doc', 'odt', 'pdf', 'zip'],
+    maxMb: 20,
+    add: '+ Добавить файл',
+  },
+}
+const MAX_FILES_PER_KIND = 10
 
 const SOURCES = [
   { value: 'author', label: 'Авторская' },
@@ -80,14 +113,22 @@ export default function AdminPage() {
   }
 
   async function archive(task) {
-    await archiveTask(task.id)
-    setMessage({ type: 'ok', text: `Задача id ${task.id} убрана в архив` })
-    setReload((r) => r + 1)
+    try {
+      await archiveTask(task.id)
+      setMessage({ type: 'ok', text: `Задача id ${task.id} убрана в архив` })
+      setReload((r) => r + 1)
+    } catch (e) {
+      setMessage({ type: 'error', text: e.message })
+    }
   }
 
-  function saved(text) {
+  function saved(text, failures = []) {
     setEditing(null)
-    setMessage({ type: 'ok', text })
+    setMessage(
+      failures.length
+        ? { type: 'error', text: `${text}, но с файлами не всё получилось: ${failures.join('; ')}` }
+        : { type: 'ok', text },
+    )
     setReload((r) => r + 1)
   }
 
@@ -144,6 +185,10 @@ function AdminRow({ task, onEdit, onArchive }) {
     <li className="admin-list__row">
       <span className="task__id">id {task.id}</span>
       <span className="admin-list__text">{task.statement}</span>
+      <span className="admin-list__files muted small" title="Картинки · файлы к заданию">
+        {task.images?.length > 0 && `🖼 ${task.images.length} `}
+        {task.attachments?.length > 0 && `📎 ${task.attachments.length}`}
+      </span>
       <span className="badge">{task.difficulty}</span>
       <span className="admin-list__actions">
         {!confirm ? (
@@ -173,8 +218,67 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
     partNumbers ? (initial.parts?.length ? initial.parts.map((p) => ({ ...p })) : emptyParts(partNumbers)) : [],
   )
 
+  // Файлы: уже прикреплённые (с сервера), отмеченные на удаление и новые, ещё не загруженные.
+  // Всё применяется по кнопке «Сохранить» — до неё можно передумать.
+  const existing = { image: initial.images ?? [], attachment: initial.attachments ?? [] }
+  const [removed, setRemoved] = useState(() => new Set())
+  const [pending, setPending] = useState([]) // [{ key, file, kind, preview }]
+  const [fileError, setFileError] = useState(null)
+  const pendingRef = useRef(pending)
+  pendingRef.current = pending
+
+  // Превью новых картинок — временные адреса в памяти браузера; освобождаем при закрытии формы.
+  useEffect(() => () => pendingRef.current.forEach((p) => p.preview && URL.revokeObjectURL(p.preview)), [])
+
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
+  }
+
+  function addFiles(fileList, kind) {
+    const rules = FILE_KINDS[kind]
+    const problems = []
+    const accepted = []
+    const already = existing[kind].filter((f) => !removed.has(f.id)).length + pending.filter((p) => p.kind === kind).length
+    for (const file of fileList) {
+      const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : ''
+      if (!rules.extensions.includes(ext)) problems.push(`«${file.name}» — неподходящий тип`)
+      else if (file.size === 0) problems.push(`«${file.name}» — пустой файл`)
+      else if (file.size > rules.maxMb * 1024 * 1024) problems.push(`«${file.name}» больше ${rules.maxMb} МБ`)
+      else if (already + accepted.length >= MAX_FILES_PER_KIND) problems.push(`«${file.name}» — не больше ${MAX_FILES_PER_KIND} шт.`)
+      else accepted.push({
+        key: `${Date.now()}-${Math.random()}`,
+        file,
+        kind,
+        preview: kind === 'image' ? URL.createObjectURL(file) : null,
+      })
+    }
+    setFileError(problems.length ? problems.join('; ') : null)
+    if (accepted.length) setPending((list) => [...list, ...accepted])
+  }
+
+  function dropPending(key) {
+    setPending((list) => {
+      const item = list.find((p) => p.key === key)
+      if (item?.preview) URL.revokeObjectURL(item.preview)
+      return list.filter((p) => p.key !== key)
+    })
+  }
+
+  function toggleRemoved(id) {
+    setRemoved((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // Ctrl+V со скриншотом в любом месте формы — добавляем как картинку.
+  function handlePaste(event) {
+    const images = [...(event.clipboardData?.files ?? [])].filter((f) => f.type.startsWith('image/'))
+    if (images.length === 0) return
+    event.preventDefault()
+    addFiles(images.map((f, i) => (f.name && f.name !== 'image.png' ? f : renamed(f, i))), 'image')
   }
 
   function setPart(index, field, value) {
@@ -205,17 +309,39 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
     } else {
       data.correct_answer = form.correct_answer.trim()
     }
+    let task
     try {
-      const task = isNew ? await createTask(data) : await updateTask(initial.id, data)
-      onSaved(isNew ? `Задача id ${task.id} добавлена в № ${task.exam_number}` : `Задача id ${task.id} сохранена`)
+      task = isNew ? await createTask(data) : await updateTask(initial.id, data)
     } catch (e) {
       setError(e.message)
       setSaving(false)
+      return
     }
+
+    // Задача сохранена — теперь файлы: сначала удаляем отмеченные, потом загружаем новые.
+    const failures = []
+    for (const id of removed) {
+      try {
+        await deleteTaskFile(task.id, id)
+      } catch (e) {
+        failures.push(`не удалился файл id ${id}: ${e.message}`)
+      }
+    }
+    for (const item of pending) {
+      try {
+        await uploadTaskFile(task.id, item.file, item.kind)
+      } catch (e) {
+        failures.push(`«${item.file.name}»: ${e.message}`)
+      }
+    }
+    onSaved(
+      isNew ? `Задача id ${task.id} добавлена в № ${task.exam_number}` : `Задача id ${task.id} сохранена`,
+      failures,
+    )
   }
 
   return (
-    <form className="panel admin-form" onSubmit={submit}>
+    <form className="panel admin-form" onSubmit={submit} onPaste={handlePaste}>
       <h2 className="panel__title">
         {isNew ? `Новая задача · № ${code} ${numberTitle ?? ''}` : `Задача id ${initial.id} · № ${form.exam_number}`}
       </h2>
@@ -283,10 +409,28 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
         </label>
       </div>
 
-      <label className="field">
-        <span>Картинка (ссылка)</span>
-        <input maxLength={500} value={form.image_url} onChange={(e) => set('image_url', e.target.value)} placeholder="https://…" />
-      </label>
+      {Object.keys(FILE_KINDS).map((kind) => (
+        <FilesField
+          key={kind}
+          kind={kind}
+          existing={existing[kind]}
+          removed={removed}
+          pending={pending.filter((p) => p.kind === kind)}
+          onAdd={(files) => addFiles(files, kind)}
+          onToggleRemoved={toggleRemoved}
+          onDropPending={dropPending}
+          disabled={saving}
+        />
+      ))}
+      {fileError && <p className="error small">{fileError}</p>}
+
+      <details className="admin-form__legacy" open={Boolean(form.image_url)}>
+        <summary className="muted small">Картинка по внешней ссылке</summary>
+        <label className="field">
+          <span>Ссылка на картинку (лучше загрузить файл выше — ссылки из интернета пропадают)</span>
+          <input maxLength={500} value={form.image_url} onChange={(e) => set('image_url', e.target.value)} placeholder="https://…" />
+        </label>
+      </details>
 
       {error && <p className="error">{error}</p>}
       <div className="admin-form__actions">
@@ -295,4 +439,88 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
       </div>
     </form>
   )
+}
+
+// Блок «Картинки» или «Файлы к заданию» в форме: что уже прикреплено, что добавится.
+function FilesField({ kind, existing, removed, pending, onAdd, onToggleRemoved, onDropPending, disabled }) {
+  const rules = FILE_KINDS[kind]
+  const input = useRef(null)
+  const [dragging, setDragging] = useState(false)
+
+  function handleDrop(event) {
+    event.preventDefault()
+    setDragging(false)
+    if (!disabled) onAdd([...event.dataTransfer.files])
+  }
+
+  const empty = existing.length === 0 && pending.length === 0
+
+  return (
+    <fieldset
+      className={`admin-files ${dragging ? 'is-dragging' : ''}`}
+      onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={handleDrop}
+    >
+      <legend>{rules.title}</legend>
+      <p className="muted small admin-files__hint">{rules.hint}</p>
+
+      {!empty && (
+        <ul className={`admin-files__list admin-files__list--${kind}`}>
+          {existing.map((f) => {
+            const isRemoved = removed.has(f.id)
+            return (
+              <li key={f.id} className={`admin-file ${isRemoved ? 'is-removed' : ''}`}>
+                {kind === 'image'
+                  ? <img src={fileUrl(f)} alt="" className="admin-file__thumb" />
+                  : <span className="admin-file__icon" aria-hidden="true">{fileIcon(f.name)}</span>}
+                <a href={fileUrl(f)} target="_blank" rel="noreferrer" className="admin-file__name">{f.name}</a>
+                <span className="muted small">{isRemoved ? 'удалится при сохранении' : formatSize(f.size)}</span>
+                <button type="button" className="btn btn--ghost btn--small" onClick={() => onToggleRemoved(f.id)} disabled={disabled}>
+                  {isRemoved ? 'Вернуть' : 'Удалить'}
+                </button>
+              </li>
+            )
+          })}
+          {pending.map((p) => (
+            <li key={p.key} className="admin-file is-new">
+              {p.preview
+                ? <img src={p.preview} alt="" className="admin-file__thumb" />
+                : <span className="admin-file__icon" aria-hidden="true">{fileIcon(p.file.name)}</span>}
+              <span className="admin-file__name">{p.file.name}</span>
+              <span className="muted small">новый · {formatSize(p.file.size)}</span>
+              <button type="button" className="btn btn--ghost btn--small" onClick={() => onDropPending(p.key)} disabled={disabled}>
+                Убрать
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="admin-files__actions">
+        <button type="button" className="btn btn--ghost btn--small" onClick={() => input.current?.click()} disabled={disabled}>
+          {rules.add}
+        </button>
+        <span className="muted small">или перетащите сюда</span>
+        <input
+          ref={input}
+          type="file"
+          accept={rules.accept}
+          multiple
+          hidden
+          onChange={(e) => {
+            onAdd([...e.target.files])
+            e.target.value = '' // чтобы тот же файл можно было выбрать ещё раз
+          }}
+        />
+      </div>
+    </fieldset>
+  )
+}
+
+// Скриншоты из буфера обмена все называются image.png — даём понятные имена.
+function renamed(file, index) {
+  const ext = (file.type.split('/')[1] || 'png').replace('jpeg', 'jpg')
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
+  return new File([file], `скриншот-${stamp}${index ? `-${index + 1}` : ''}.${ext}`, { type: file.type })
 }
