@@ -10,13 +10,16 @@ export default function Layout() {
   const { pathname } = useLocation()
   const onTasks = pathname === '/' || pathname.startsWith('/tasks')
 
-  // Ссылки на главную роутер пишет без слэша на конце (/frontend), а GitHub Pages
-  // сразу (со статусом 200) отдаёт только /frontend/. Дописываем слэш в адресной
-  // строке — тогда F5 на главной всегда даёт настоящую страницу.
+  // На GitHub Pages адрес страницы со слэшем на конце (/frontend/rating/) отдаётся из
+  // rating/index.html со статусом 200 (копии кладёт scripts/pages-routes.mjs), а без
+  // слэша — нет. Роутер пишет ссылки без слэша, поэтому дописываем его в адресной
+  // строке: тогда F5 на любой известной странице даёт настоящую страницу, а не 404.
   useEffect(() => {
-    const base = import.meta.env.BASE_URL
-    if (base !== '/' && window.location.pathname === base.replace(/\/+$/, '')) {
-      window.history.replaceState(window.history.state, '', base + window.location.search + window.location.hash)
+    if (import.meta.env.BASE_URL === '/') return // локальная разработка — не нужно
+    const { pathname: path, search, hash } = window.location
+    const last = path.slice(path.lastIndexOf('/') + 1)
+    if (!path.endsWith('/') && !last.includes('.')) {
+      window.history.replaceState(window.history.state, '', `${path}/${search}${hash}`)
     }
   }, [pathname])
 
