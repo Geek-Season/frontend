@@ -71,8 +71,11 @@ npm run build     # сборка в dist/
 | `VITE_BASE` | Путь сайта. На Pages — `/frontend/`, локально — `/` |
 
 Проверить сборку как на Pages: `VITE_API_URL=http://127.0.0.1:8000 VITE_BASE=/frontend/ npm run build:pages`.
-Внутренние страницы (например, `/frontend/tasks/17`) открываются по прямой ссылке через `404.html` —
-копию `index.html`, которую GitHub Pages отдаёт для неизвестных путей.
+GitHub Pages умеет только отдавать файлы, поэтому `npm run build:pages` (`scripts/pages-routes.mjs`) кладёт
+копию `index.html` в папку каждой известной страницы — `rating/`, `exam/`, `login/`, `profile/`, `admin/`,
+`tasks/1/` … `tasks/27/`. Сайт держит в адресе слэш на конце (`/frontend/rating/`), и F5 на этих страницах
+получает настоящую страницу со статусом 200. Для остальных адресов (результат пробника `/exam/12`)
+GitHub Pages отдаёт `404.html` — ту же копию, страница открывается, но со статусом 404.
 
 ## Структура
 

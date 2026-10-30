@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:pages": "vite build && node -e \"require('fs').copyFileSync('dist/index.html', 'dist/404.html')\"",
+    "build:pages": "vite build && node scripts/pages-routes.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
