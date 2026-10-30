@@ -73,7 +73,7 @@ export default function NumberTasksPage() {
   return (
     <section>
       <div className="number-head">
-        <Link to="/tasks" className="back" aria-label="К списку номеров">←</Link>
+        <Link to="/" className="back" aria-label="К списку номеров">←</Link>
         <div className="number-head__title">
           <h1>№ {code}</h1>
           {page && (

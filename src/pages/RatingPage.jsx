@@ -45,7 +45,7 @@ export default function RatingPage() {
           {rating.top.length === 0 ? (
             <div className="empty">
               {period === 'week' ? 'На этой неделе ещё никто не решал.' : 'Пока никто не решал задачи.'}{' '}
-              <Link to="/tasks">Станьте первым →</Link>
+              <Link to="/">Станьте первым →</Link>
             </div>
           ) : (
             <ol className="leaderboard">
