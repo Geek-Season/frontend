@@ -1,29 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { getNumbers } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import { useNumbers, usePrefetchNumberTasks } from '../queries.js'
 
 // Страница «Задания»: сетка карточек с номерами ЕГЭ.
 export default function NumbersPage() {
   const { user } = useAuth()
-  const [numbers, setNumbers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [query, setQuery] = useState('')
-
-  // Загружаем при открытии страницы и заново — когда ученик вошёл или вышел
-  // (у вошедшего в ответе есть solved — сколько задач номера он решил).
-  useEffect(() => {
-    let cancelled = false // ответ на устаревший запрос не должен перезаписать свежий
-    getNumbers()
-      .then((data) => !cancelled && setNumbers(data))
-      .catch((e) => !cancelled && setError(e.message))
-      .finally(() => !cancelled && setLoading(false))
-    return () => {
-      cancelled = true
-    }
-  }, [user])
+  // Из кэша: при возврате на страницу карточки появляются сразу, без «Загрузка…».
+  // Вошёл или вышел ученик — другой ключ кэша (у вошедшего в ответе есть solved).
+  const { data: numbers = [], isPending: loading, error: queryError } = useNumbers()
+  const error = queryError?.message
+  // Наведение на карточку — задачи номера начинают грузиться заранее.
+  const prefetch = usePrefetchNumberTasks()
 
   const q = query.trim().toLowerCase()
   const visible = numbers.filter(
@@ -45,14 +35,21 @@ export default function NumbersPage() {
       />
 
       {loading && <p className="muted">Загрузка…</p>}
-      {error && <p className="error">Не удалось загрузить номера: {error}</p>}
+      {error && numbers.length === 0 && <p className="error">Не удалось загрузить номера: {error}</p>}
       {!loading && !error && visible.length === 0 && (
         <p className="muted">Ничего не найдено.</p>
       )}
 
       <div className="numbers-grid">
         {visible.map((n) => (
-          <Link key={n.code} to={`/tasks/${n.code}`} className="number-card">
+          <Link
+            key={n.code}
+            to={`/tasks/${n.code}`}
+            className="number-card"
+            onMouseEnter={() => prefetch(n.code)}
+            onFocus={() => prefetch(n.code)}
+            onTouchStart={() => prefetch(n.code)}
+          >
             <span className="number-card__code">{n.code}</span>
             <span className="number-card__title">{n.title}</span>
             <span className="progress" title={user ? `Решено ${n.solved} из ${n.tasks_count}` : undefined}>

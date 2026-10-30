@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { getRating } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import { useRating } from '../queries.js'
 
 const PERIODS = [
   { value: 'week', label: 'Эта неделя' },
@@ -13,19 +13,10 @@ const PERIODS = [
 export default function RatingPage() {
   const { user } = useAuth()
   const [period, setPeriod] = useState('week')
-  const [rating, setRating] = useState(null)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    let cancelled = false
-    setError(null)
-    getRating(period)
-      .then((data) => !cancelled && setRating(data))
-      .catch((e) => !cancelled && setError(e.message))
-    return () => {
-      cancelled = true
-    }
-  }, [period, user])
+  // Обе вкладки («Эта неделя», «Всё время») кэшируются отдельно: переключение — мгновенное.
+  const ratingQuery = useRating(period)
+  const rating = ratingQuery.data ?? null
+  const error = rating ? null : ratingQuery.error?.message
 
   const meInTop = rating?.top.some((r) => r.is_me)
 

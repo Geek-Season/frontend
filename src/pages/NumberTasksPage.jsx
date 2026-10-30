@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 
-import { getNumberTasks, getNumbers } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import TaskCard from '../components/TaskCard.jsx'
-
-const PAGE_SIZE = 20
+import { tasksQueryOptions, useInvalidate, useMe, useNumberTasks, useNumbers } from '../queries.js'
 
 const SOURCES = [
   { value: '', label: 'Все' },
@@ -42,54 +40,30 @@ export default function NumberTasksPage() {
   // Вышел из аккаунта — фильтр по прогрессу больше не применим.
   const progressFilter = user ? progress : ''
 
-  const [page, setPage] = useState(null) // { number, total, items }
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [error, setError] = useState(null)
-  const [allCodes, setAllCodes] = useState([])
+  const me = useMe()
+  const invalidate = useInvalidate()
+  const filters = { source, progress: progressFilter, sort }
 
-  // Список кодов нужен для стрелок «предыдущий / следующий номер».
-  useEffect(() => {
-    getNumbers()
-      .then((numbers) => setAllCodes(numbers.map((n) => n.code)))
-      .catch(() => {})
-  }, [])
-
-  // Перезагружаем задачи, когда меняется номер, источник или сортировка.
-  useEffect(() => {
-    let cancelled = false // защита от ответа на устаревший запрос
-    setLoading(true)
-    setError(null)
-    getNumberTasks(code, { source, progress: progressFilter, sort, limit: PAGE_SIZE })
-      .then((data) => !cancelled && setPage(data))
-      .catch((e) => !cancelled && setError(e.message))
-      .finally(() => !cancelled && setLoading(false))
-    return () => {
-      cancelled = true
-    }
-  }, [code, source, progressFilter, sort, user])
-
-  // Ученик решил задачу впервые — обновляем счётчик «Решено» без перезагрузки.
-  function handleChecked(taskId, isCorrect) {
-    setPage((current) => {
-      const task = current.items.find((t) => t.id === taskId)
-      const firstSolve = isCorrect && task.status !== 'solved'
-      return {
-        ...current,
-        number: firstSolve ? { ...current.number, solved: current.number.solved + 1 } : current.number,
-        items: current.items.map((t) =>
-          t.id === taskId ? { ...t, status: isCorrect || t.status === 'solved' ? 'solved' : 'failed' } : t,
-        ),
-      }
-    })
+  // Задачи — из кэша, порциями по 20 («Показать ещё»). Номер, фильтр или сортировка
+  // уже открывались недавно — список появится сразу, без запроса.
+  const tasks = useNumberTasks(code, filters)
+  const pages = tasks.data?.pages
+  const page = pages && {
+    number: pages[pages.length - 1].number,
+    total: pages[pages.length - 1].total,
+    items: pages.flatMap((p) => p.items),
   }
+  const loading = tasks.isPending
+  const error = tasks.error?.message
 
-  function loadMore() {
-    setLoadingMore(true)
-    getNumberTasks(code, { source, progress: progressFilter, sort, limit: PAGE_SIZE, offset: page.items.length })
-      .then((data) => setPage({ ...page, items: [...page.items, ...data.items] }))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoadingMore(false))
+  // Коды номеров для стрелок «предыдущий / следующий» — тот же кэш, что у страницы «Задания»:
+  // отдельного запроса больше нет.
+  const allCodes = (useNumbers().data ?? []).map((n) => n.code)
+
+  // Ученик ответил — обновляем метку задачи и «решено X из Y» на месте, без перезагрузки,
+  // а профиль, рейтинг и другие фильтры помечаем устаревшими.
+  function handleChecked(taskId, isCorrect) {
+    invalidate.taskChecked(tasksQueryOptions(me, code, filters).queryKey, code, taskId, isCorrect)
   }
 
   const index = allCodes.indexOf(code)
@@ -154,7 +128,7 @@ export default function NumberTasksPage() {
       )}
 
       {loading && <p className="muted">Загрузка…</p>}
-      {error && <p className="error">{error}</p>}
+      {error && !page && <p className="error">{error}</p>}
 
       {!loading && page && (
         <>
@@ -165,11 +139,12 @@ export default function NumberTasksPage() {
           {page.items.map((task, i) => (
             <TaskCard key={task.id} task={task} position={i + 1} onChecked={handleChecked} />
           ))}
-          {page.items.length < page.total && (
-            <button className="btn btn--ghost wide" onClick={loadMore} disabled={loadingMore}>
-              {loadingMore ? 'Загрузка…' : 'Показать ещё'}
+          {tasks.hasNextPage && (
+            <button className="btn btn--ghost wide" onClick={() => tasks.fetchNextPage()} disabled={tasks.isFetchingNextPage}>
+              {tasks.isFetchingNextPage ? 'Загрузка…' : 'Показать ещё'}
             </button>
           )}
+          {tasks.isFetchNextPageError && <p className="error">Не удалось загрузить ещё: {tasks.error?.message}</p>}
         </>
       )}
     </section>
