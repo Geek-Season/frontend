@@ -1,43 +1,35 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 
-import { finishExam, getCurrentExam, getExamHistory, saveExamAnswer, startExam } from '../api.js'
+import { finishExam, saveExamAnswer, startExam } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import TaskMedia from '../components/TaskMedia.jsx'
+import { useCurrentExam, useExamHistory, useInvalidate } from '../queries.js'
 
 // /exam — пробник: экран старта или идущий пробник.
 // Время считает сервер; страница только показывает отсчёт. Перезагрузка
 // ничего не сбрасывает: /exam/current вернёт тот же пробник с ответами.
 export default function ExamPage() {
   const { user, checking } = useAuth()
-  const [exam, setExam] = useState(undefined) // undefined — грузим, null — пробника нет
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    if (!user) return
-    getCurrentExam()
-      .then(setExam) // null — идущего пробника нет, показываем старт
-      .catch((e) => setError(e.message))
-  }, [user])
+  // Идущий пробник всегда берётся с сервера (в кэше не хранится): ответы и время меняются.
+  const current = useCurrentExam()
+  const [started, setStarted] = useState(null) // пробник, только что начатый кнопкой
+  const exam = started ?? current.data // undefined — грузим, null — пробника нет
 
   if (checking) return <p className="muted">Загрузка…</p>
   if (!user) return <Navigate to="/login" replace />
-  if (error) return <p className="error">{error}</p>
+  if (current.error && !started) return <p className="error">{current.error.message}</p>
   if (exam === undefined) return <p className="muted">Загрузка…</p>
-  if (exam === null) return <ExamStart onStarted={setExam} />
+  if (exam === null) return <ExamStart onStarted={setStarted} />
   return <ExamRun exam={exam} />
 }
 
 // ---------- Старт ----------
 
 function ExamStart({ onStarted }) {
-  const [history, setHistory] = useState([])
+  const history = useExamHistory().data ?? [] // из кэша; обновляется после каждого завершённого пробника
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState(null)
-
-  useEffect(() => {
-    getExamHistory().then(setHistory).catch(() => {})
-  }, [])
 
   async function begin() {
     setStarting(true)
@@ -96,6 +88,7 @@ function ExamStart({ onStarted }) {
 
 function ExamRun({ exam }) {
   const navigate = useNavigate()
+  const invalidate = useInvalidate()
   const [answers, setAnswers] = useState(() =>
     Object.fromEntries(exam.items.map((i) => [i.position, i.answer ?? ''])),
   )
@@ -116,11 +109,15 @@ function ExamRun({ exam }) {
     finished.current = true
     setFinishing(true)
     Object.values(timers.current).forEach(clearTimeout)
+    let result = null
     try {
-      await finishExam(exam.id)
+      result = await finishExam(exam.id)
     } catch {
       // уже завершён сервером — результат всё равно доступен
     }
+    // Результат кладём в кэш — страница разбора откроется без запроса; профиль, рейтинг,
+    // историю и прогресс по номерам помечаем устаревшими.
+    invalidate.examFinished(exam.id, result)
     navigate(`/exam/${exam.id}`, { replace: true })
   }
 

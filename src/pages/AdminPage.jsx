@@ -6,14 +6,13 @@ import {
   createTask,
   deleteTaskFile,
   fileUrl,
-  getNumberTasks,
-  getNumbers,
   getTaskFull,
   updateTask,
   uploadTaskFile,
 } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import { fileIcon, formatSize } from '../components/TaskMedia.jsx'
+import { useAdminTasks, useInvalidate, useNumbers } from '../queries.js'
 
 const EMPTY = {
   statement: '',
@@ -60,31 +59,18 @@ const SOURCES = [
 // /admin — редактор банка задач. Только для роли admin (сервер всё равно проверит сам).
 export default function AdminPage() {
   const { user, checking } = useAuth()
-  const [numbers, setNumbers] = useState([])
   const [code, setCode] = useState('1')
-  const [tasks, setTasks] = useState([])
-  const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null) // null — форма закрыта, {id?, ...поля} — открыта
-  const [reload, setReload] = useState(0)
   const [message, setMessage] = useState(null)
+  const isAdmin = user?.role === 'admin'
 
-  useEffect(() => {
-    if (user?.role !== 'admin') return
-    getNumbers().then(setNumbers).catch(() => {})
-  }, [user, reload])
-
-  useEffect(() => {
-    if (user?.role !== 'admin') return
-    let cancelled = false
-    setLoading(true)
-    getNumberTasks(code, { sort: 'new', limit: 100 })
-      .then((page) => !cancelled && setTasks(page.items))
-      .catch((e) => !cancelled && setMessage({ type: 'error', text: e.message }))
-      .finally(() => !cancelled && setLoading(false))
-    return () => {
-      cancelled = true
-    }
-  }, [code, user, reload])
+  const numbers = useNumbers().data ?? []
+  const tasksQuery = useAdminTasks(code, isAdmin)
+  const tasks = tasksQuery.data ?? []
+  const loading = isAdmin && tasksQuery.isPending
+  // Банк изменился — номера и задачи устарели у всех страниц сайта (и у учеников при следующем заходе).
+  const invalidate = useInvalidate()
+  const reload = () => invalidate.bankChanged()
 
   if (checking) return <p className="muted">Загрузка…</p>
   if (!user) return <Navigate to="/login" replace />
@@ -116,7 +102,7 @@ export default function AdminPage() {
     try {
       await archiveTask(task.id)
       setMessage({ type: 'ok', text: `Задача id ${task.id} убрана в архив` })
-      setReload((r) => r + 1)
+      reload()
     } catch (e) {
       setMessage({ type: 'error', text: e.message })
     }
@@ -129,7 +115,7 @@ export default function AdminPage() {
         ? { type: 'error', text: `${text}, но с файлами не всё получилось: ${failures.join('; ')}` }
         : { type: 'ok', text },
     )
-    setReload((r) => r + 1)
+    reload()
   }
 
   const current = numbers.find((n) => n.code === code)
@@ -155,6 +141,7 @@ export default function AdminPage() {
       </div>
 
       {message && <p className={message.type === 'error' ? 'error' : 'success'}>{message.text}</p>}
+      {tasksQuery.error && <p className="error">{tasksQuery.error.message}</p>}
 
       {editing && (
         <TaskForm

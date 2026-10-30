@@ -12,6 +12,13 @@ export function setAuthToken(token) {
   authToken = token
 }
 
+// Что делать, если сервер ответил 401 на запрос с токеном (токен истёк или
+// пользователь удалён). auth.jsx подставляет сюда выход из аккаунта.
+let onUnauthorized = null
+export function setUnauthorizedHandler(handler) {
+  onUnauthorized = handler
+}
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message)
@@ -25,6 +32,12 @@ async function request(path, options = {}) {
   if (authToken) headers.Authorization = `Bearer ${authToken}`
 
   const response = await fetch(BASE + path, { headers, ...options })
+
+  if (response.status === 401 && headers.Authorization) {
+    // Токен больше не действует: выходим, чтобы сайт не делал вид, что ученик вошёл,
+    // а его ответы не терялись молча.
+    onUnauthorized?.()
+  }
 
   if (!response.ok) {
     // FastAPI кладёт текст ошибки в поле detail.

@@ -1,22 +1,17 @@
-import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
-import { getMyAchievements, getMyStats } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import ActivityChart from '../components/ActivityChart.jsx'
+import { useAchievements, useStats } from '../queries.js'
 
 export default function ProfilePage() {
   const { user, checking, logout } = useAuth()
-  const [stats, setStats] = useState(null)
-  const [achievements, setAchievements] = useState([])
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    if (!user) return
-    getMyStats().then(setStats).catch((e) => setError(e.message))
-    // Достижения выдаёт фоновый воркер через RabbitMQ — обычно за секунду после ответа.
-    getMyAchievements().then(setAchievements).catch(() => {})
-  }, [user])
+  // Из кэша: после ответа на задачу статистика помечена устаревшей и тихо обновится в фоне.
+  const statsQuery = useStats()
+  const stats = statsQuery.data ?? null
+  const error = stats ? null : statsQuery.error?.message
+  // Достижения выдаёт фоновый воркер через RabbitMQ — обычно за секунду после ответа.
+  const achievements = useAchievements().data ?? []
 
   if (checking) return <p className="muted">Загрузка…</p>
   if (!user) return <Navigate to="/login" replace />

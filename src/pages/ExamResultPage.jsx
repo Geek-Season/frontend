@@ -1,21 +1,18 @@
-import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 
-import { getExam } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import TaskMedia from '../components/TaskMedia.jsx'
+import { useExam } from '../queries.js'
 
 // /exam/12 — результат пробника и разбор каждой задачи.
 export default function ExamResultPage() {
   const { id } = useParams()
   const { user, checking } = useAuth()
-  const [exam, setExam] = useState(null)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    if (!user) return
-    getExam(id).then(setExam).catch((e) => setError(e.message))
-  }, [id, user])
+  // Завершённый пробник не меняется — после первого открытия разбор показывается из кэша.
+  // Сразу после «Завершить» результат уже в кэше: страница открывается без запроса.
+  const examQuery = useExam(id)
+  const exam = examQuery.data ?? null
+  const error = examQuery.error?.message
 
   if (checking) return <p className="muted">Загрузка…</p>
   if (!user) return <Navigate to="/login" replace />

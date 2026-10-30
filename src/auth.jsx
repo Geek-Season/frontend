@@ -6,7 +6,8 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 
-import { getMe, setAuthToken } from './api.js'
+import { getMe, setAuthToken, setUnauthorizedHandler } from './api.js'
+import { queryClient } from './queryClient.js'
 
 const STORAGE_KEY = 'geek-season-token'
 const AuthContext = createContext(null)
@@ -57,7 +58,18 @@ export function AuthProvider({ children }) {
     storeToken(null)
     setAuthToken(null)
     setUser(null)
+    // Кэш ответов API — данные этого ученика; следующему в этом браузере они не нужны.
+    // Очищаем после перерисовки: иначе открытая страница (например, профиль) успела бы
+    // перезапросить свои данные уже без токена. Чужих данных не покажет и сейчас —
+    // ключи кэша содержат id ученика.
+    setTimeout(() => queryClient.clear(), 0)
   }
+
+  // Сервер ответил 401 на запрос с токеном — токен истёк: выходим.
+  useEffect(() => {
+    setUnauthorizedHandler(logout)
+    return () => setUnauthorizedHandler(null)
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, checking, login, logout }}>
