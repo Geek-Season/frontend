@@ -48,7 +48,7 @@ function EmptyStats() {
   return (
     <div className="placeholder">
       <p>Вы ещё не решали задачи. Здесь появится статистика: решённые задачи, точность и прогресс по номерам.</p>
-      <Link to="/tasks" className="btn">Решать задания</Link>
+      <Link to="/" className="btn">Решать задания</Link>
     </div>
   )
 }

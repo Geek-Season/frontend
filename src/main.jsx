@@ -18,7 +18,7 @@ import { queryClient } from './queryClient.js'
 import './styles.css'
 
 // Адреса страниц сайта:
-//   /tasks          — сетка номеров ЕГЭ
+//   /               — сетка номеров ЕГЭ (старый адрес /tasks ведёт сюда же)
 //   /tasks/17       — прототипы номера 17
 //   /login          — вход через Telegram
 //   /profile        — профиль (только для вошедших)
@@ -33,8 +33,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/+$/, '') || '/'}>
         <Routes>
           <Route element={<Layout />}>
-            <Route index element={<Navigate to="/tasks" replace />} />
-            <Route path="/tasks" element={<NumbersPage />} />
+            {/* «Задания» — прямо на главной: по адресу сайта GitHub Pages отдаёт настоящий
+                index.html со статусом 200, и F5 на главной не даёт 404. */}
+            <Route index element={<NumbersPage />} />
+            <Route path="/tasks" element={<Navigate to="/" replace />} />
             <Route path="/tasks/:code" element={<NumberTasksPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/profile" element={<ProfilePage />} />
