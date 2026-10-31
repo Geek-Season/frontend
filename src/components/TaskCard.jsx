@@ -4,7 +4,7 @@ import { checkAnswer, getSolution } from '../api.js'
 import Markdown from './Markdown.jsx'
 import TaskMedia from './TaskMedia.jsx'
 
-const SOURCE_LABELS = { demo: 'Демо', official: 'Экзамен', author: 'Авторская' }
+const SOURCE_LABELS = { demo: 'Демо', official: 'Экзамен', approbation: 'Апробация', author: 'Авторская' }
 const STATUS_LABELS = { solved: '✓ Решена', failed: '✗ Не решена' }
 
 // Одна задача: условие, поле ответа, кнопка «Проверить» и результат.

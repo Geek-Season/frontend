@@ -56,6 +56,7 @@ const SOURCES = [
   { value: 'author', label: 'Авторская' },
   { value: 'demo', label: 'Демоверсия' },
   { value: 'official', label: 'Реальный экзамен' },
+  { value: 'approbation', label: 'Апробация' },
 ]
 
 // /admin — редактор банка задач. Только для роли admin (сервер всё равно проверит сам).
