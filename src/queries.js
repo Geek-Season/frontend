@@ -12,10 +12,19 @@ import { useAuth } from './auth.jsx'
 
 export const TASKS_PAGE_SIZE = 20
 
-/** id вошедшего пользователя или 'guest' — первая часть ключей персональных данных */
+/**
+ * id вошедшего пользователя или 'guest' — первая часть ключей персональных данных.
+ *
+ * Пока сохранённый токен проверяется (/auth/me), берём id из прошлого входа: запросы
+ * уходят сразу и с правильным ключом. Если id не сохранён (вход был до этого
+ * обновления) — null, и запросы ждут ответа /auth/me. Раньше на это время ключ был
+ * 'guest': страница загружала данные дважды — «как гость» и ещё раз как ученик.
+ */
 export function useMe() {
-  const { user } = useAuth()
-  return user ? user.id : 'guest'
+  const { user, checking, savedUserId } = useAuth()
+  if (user) return user.id
+  if (checking) return savedUserId == null ? null : Number(savedUserId)
+  return 'guest'
 }
 
 // ---------- Ключи ----------
@@ -37,7 +46,7 @@ export const keys = {
 
 export function useNumbers() {
   const me = useMe()
-  return useQuery({ queryKey: keys.numbers(me), queryFn: api.getNumbers })
+  return useQuery({ queryKey: keys.numbers(me), queryFn: api.getNumbers, enabled: me !== null })
 }
 
 /** Параметры списка задач номера — общие для страницы и для предзагрузки при наведении. */
@@ -62,6 +71,7 @@ export function useNumberTasks(code, filters) {
   const me = useMe()
   return useInfiniteQuery({
     ...tasksQueryOptions(me, code, filters),
+    enabled: me !== null,
     // Пока грузится новый фильтр того же номера — показываем прежний список, а не «Загрузка…».
     // Для другого номера — нет: задачи чужого номера на экране только запутают.
     placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[2] === code ? previous : undefined),
@@ -72,14 +82,14 @@ export function useNumberTasks(code, filters) {
 export function usePrefetchNumberTasks() {
   const me = useMe()
   const queryClient = useQueryClient()
-  return (code) => queryClient.prefetchInfiniteQuery(tasksQueryOptions(me, code))
+  return (code) => me !== null && queryClient.prefetchInfiniteQuery(tasksQueryOptions(me, code))
 }
 
 // ---------- Профиль и рейтинг ----------
 
 export function useStats() {
   const me = useMe()
-  return useQuery({ queryKey: keys.stats(me), queryFn: api.getMyStats, enabled: me !== 'guest' })
+  return useQuery({ queryKey: keys.stats(me), queryFn: api.getMyStats, enabled: me !== 'guest' && me !== null })
 }
 
 export function useAchievements() {
@@ -87,7 +97,7 @@ export function useAchievements() {
   return useQuery({
     queryKey: keys.achievements(me),
     queryFn: api.getMyAchievements,
-    enabled: me !== 'guest',
+    enabled: me !== 'guest' && me !== null,
     // Достижения выдаёт фоновый воркер через секунду-другую после ответа — проверяем чаще.
     staleTime: 15 * 1000,
   })
@@ -95,7 +105,9 @@ export function useAchievements() {
 
 export function useRating(period) {
   const me = useMe()
-  return useQuery({ queryKey: keys.rating(me, period), queryFn: () => api.getRating(period), staleTime: 30 * 1000 })
+  return useQuery({
+    queryKey: keys.rating(me, period), queryFn: () => api.getRating(period), staleTime: 30 * 1000, enabled: me !== null,
+  })
 }
 
 // ---------- Пробник ----------
@@ -105,7 +117,7 @@ export function useCurrentExam() {
   return useQuery({
     queryKey: keys.examCurrent(me),
     queryFn: api.getCurrentExam,
-    enabled: me !== 'guest',
+    enabled: me !== 'guest' && me !== null,
     // Идущий пробник — всегда с сервера: ответы и оставшееся время меняются каждую секунду,
     // а экран пробника берёт ответы из данных один раз при открытии.
     staleTime: 0,
@@ -116,7 +128,7 @@ export function useCurrentExam() {
 
 export function useExamHistory() {
   const me = useMe()
-  return useQuery({ queryKey: keys.examHistory(me), queryFn: api.getExamHistory, enabled: me !== 'guest' })
+  return useQuery({ queryKey: keys.examHistory(me), queryFn: api.getExamHistory, enabled: me !== 'guest' && me !== null })
 }
 
 export function useExam(id) {
@@ -124,7 +136,7 @@ export function useExam(id) {
   return useQuery({
     queryKey: keys.exam(me, id),
     queryFn: () => api.getExam(id),
-    enabled: me !== 'guest',
+    enabled: me !== 'guest' && me !== null,
     // Завершённый пробник уже не изменится — его можно не перезапрашивать вовсе.
     staleTime: (query) => (query.state.data?.finished_at ? Infinity : 0),
   })
@@ -138,7 +150,7 @@ export function useAdminTasks(code, enabled) {
     queryKey: keys.adminTasks(me, code),
     queryFn: () => api.getNumberTasks(code, { sort: 'new', limit: 100 }),
     select: (page) => page.items,
-    enabled,
+    enabled: enabled && me !== null,
   })
 }
 

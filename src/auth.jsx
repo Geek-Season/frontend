@@ -12,50 +12,66 @@ import { queryClient } from './queryClient.js'
 const STORAGE_KEY = 'geek-season-token'
 const AuthContext = createContext(null)
 
-function readStoredToken() {
+// Рядом с токеном храним id ученика: после перезагрузки страницы ключи кэша
+// (queries.js) известны сразу, и данные грузятся одновременно с проверкой токена,
+// а не дважды — сначала «как гость», потом ещё раз как ученик.
+const USER_ID_KEY = 'geek-season-user-id'
+
+function readStored(key) {
   try {
-    return localStorage.getItem(STORAGE_KEY)
+    return localStorage.getItem(key)
   } catch {
     return null // localStorage бывает недоступен (приватный режим и т. п.)
   }
 }
 
-function storeToken(token) {
+function store(key, value) {
   try {
-    if (token) localStorage.setItem(STORAGE_KEY, token)
-    else localStorage.removeItem(STORAGE_KEY)
+    if (value != null) localStorage.setItem(key, String(value))
+    else localStorage.removeItem(key)
   } catch {
     // без localStorage вход просто не переживёт перезагрузку
   }
+}
+
+function storeToken(token) {
+  store(STORAGE_KEY, token)
 }
 
 export function AuthProvider({ children }) {
   // Токен подставляем в api.js сразу, ещё до первой отрисовки:
   // иначе страницы успеют отправить первые запросы «анонимно».
   const [savedToken] = useState(() => {
-    const token = readStoredToken()
+    const token = readStored(STORAGE_KEY)
     setAuthToken(token)
     return token
   })
+  // id из прошлого входа — только пока /auth/me не ответил (см. useMe в queries.js).
+  const [savedUserId] = useState(() => (savedToken ? readStored(USER_ID_KEY) : null))
   const [user, setUser] = useState(null)
   const [checking, setChecking] = useState(Boolean(savedToken)) // проверяем сохранённый токен
 
   useEffect(() => {
     if (!savedToken) return
     getMe()
-      .then(setUser)
+      .then((me) => {
+        setUser(me)
+        store(USER_ID_KEY, me.id)
+      })
       .catch(() => logout())
       .finally(() => setChecking(false))
   }, [savedToken])
 
   function login(token, userData) {
     storeToken(token)
+    store(USER_ID_KEY, userData.id)
     setAuthToken(token)
     setUser(userData)
   }
 
   function logout() {
     storeToken(null)
+    store(USER_ID_KEY, null)
     setAuthToken(null)
     setUser(null)
     // Кэш ответов API — данные этого ученика; следующему в этом браузере они не нужны.
@@ -72,7 +88,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, checking, login, logout }}>
+    <AuthContext.Provider value={{ user, checking, savedUserId, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
