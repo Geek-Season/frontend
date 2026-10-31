@@ -63,8 +63,8 @@ export default function NumberTasksPage() {
 
   // Ученик ответил — обновляем метку задачи и «решено X из Y» на месте, без перезагрузки,
   // а профиль, рейтинг и другие фильтры помечаем устаревшими.
-  function handleChecked(taskId, isCorrect) {
-    invalidate.taskChecked(tasksQueryOptions(me, code, filters).queryKey, code, taskId, isCorrect)
+  function handleChecked(taskId, isCorrect, solutionAvailable) {
+    invalidate.taskChecked(tasksQueryOptions(me, code, filters).queryKey, code, taskId, isCorrect, solutionAvailable)
   }
 
   const index = allCodes.indexOf(code)

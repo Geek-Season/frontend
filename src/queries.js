@@ -166,7 +166,7 @@ export function useInvalidate() {
      * Ученик ответил на задачу на странице номера: статус задачи и «решено X из Y»
      * обновляем на месте (без перезагрузки списка), остальное — пометить устаревшим.
      */
-    taskChecked(currentKey, code, taskId, isCorrect) {
+    taskChecked(currentKey, code, taskId, isCorrect, solutionAvailable = false) {
       let firstSolve = false
       queryClient.setQueryData(currentKey, (data) => {
         if (!data) return data
@@ -178,7 +178,14 @@ export function useInvalidate() {
             ...page,
             number: firstSolve ? { ...page.number, solved: page.number.solved + 1 } : page.number,
             items: page.items.map((t) =>
-              t.id === taskId ? { ...t, status: isCorrect || t.status === 'solved' ? 'solved' : 'failed' } : t,
+              t.id === taskId
+                ? {
+                  ...t,
+                  status: isCorrect || t.status === 'solved' ? 'solved' : 'failed',
+                  // Разбор открылся — кнопка «Показать ответ и разбор» останется и после перехода назад.
+                  solution_available: t.solution_available || solutionAvailable,
+                }
+                : t,
             ),
           })),
         }
