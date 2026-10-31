@@ -56,7 +56,6 @@ export default function RatingPage() {
                   <span className="leaderboard__name">
                     {r.first_name}
                     {r.is_me && <span className="badge badge--me">вы</span>}
-                    {r.username && <span className="muted small"> @{r.username}</span>}
                   </span>
                   <span className="leaderboard__points">{r.points}</span>
                 </li>
