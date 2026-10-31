@@ -2,8 +2,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { resetNickname } from '../api.js'
+import { resetAvatar, resetNickname } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import Avatar from '../components/Avatar.jsx'
 import { useRating } from '../queries.js'
 
 const PERIODS = [
@@ -25,12 +26,15 @@ export default function RatingPage() {
   const queryClient = useQueryClient()
   const [resetError, setResetError] = useState(null)
 
-  // Админ: сбросить неприличный ник — ученик снова будет под именем из Telegram.
-  async function handleReset(row) {
-    if (!window.confirm(`Сбросить ник «${row.name}»? Ученик будет показан под именем из Telegram.`)) return
+  // Админ: сбросить неприличный ник или аватарку — у ученика снова имя и фото из Telegram.
+  async function handleReset(row, what) {
+    const question = what === 'avatar'
+      ? `Сбросить аватарку «${rowName(row)}»? У ученика снова будет фото из Telegram.`
+      : `Сбросить ник «${rowName(row)}»? Ученик будет показан под именем из Telegram.`
+    if (!window.confirm(question)) return
     setResetError(null)
     try {
-      await resetNickname(row.user_id)
+      await (what === 'avatar' ? resetAvatar(row.user_id) : resetNickname(row.user_id))
       queryClient.invalidateQueries({ queryKey: ['rating'] })
     } catch (e) {
       setResetError(e.message)
@@ -55,7 +59,7 @@ export default function RatingPage() {
       </div>
 
       {error && <p className="error">{error}</p>}
-      {resetError && <p className="error">Не удалось сбросить ник: {resetError}</p>}
+      {resetError && <p className="error">Не удалось сбросить: {resetError}</p>}
       {!rating && !error && <p className="muted">Загрузка…</p>}
 
       {rating && (
@@ -70,13 +74,18 @@ export default function RatingPage() {
               {rating.top.map((r) => (
                 <li key={r.user_id} className={`leaderboard__row ${r.is_me ? 'is-me' : ''}`}>
                   <span className={`leaderboard__place place-${r.place}`}>{r.place}</span>
-                  <span className="avatar avatar--small">{rowName(r).slice(0, 1).toUpperCase()}</span>
+                  <Avatar name={rowName(r)} url={r.avatar_url} size="small" />
                   <span className="leaderboard__name">
                     {rowName(r)}
                     {r.is_me && <span className="badge badge--me">вы</span>}
                     {isAdmin && r.has_nickname && (
-                      <button type="button" className="leaderboard__reset" onClick={() => handleReset(r)}>
+                      <button type="button" className="leaderboard__reset" onClick={() => handleReset(r, 'nickname')}>
                         сбросить ник
+                      </button>
+                    )}
+                    {isAdmin && r.has_custom_avatar && (
+                      <button type="button" className="leaderboard__reset" onClick={() => handleReset(r, 'avatar')}>
+                        сбросить аватарку
                       </button>
                     )}
                   </span>

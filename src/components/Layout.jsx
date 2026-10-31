@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { displayName, useAuth } from '../auth.jsx'
+import Avatar from './Avatar.jsx'
 
 // Общая рамка всех страниц: шапка с меню, а ниже — текущая страница (<Outlet />).
 export default function Layout() {
@@ -37,7 +38,7 @@ export default function Layout() {
             {user?.role === 'admin' && <NavLink to="/admin" className="nav__link nav__link--admin">Редактор</NavLink>}
             {!checking && (user ? (
               <NavLink to="/profile" className="nav__link nav__user">
-                <span className="avatar avatar--small">{displayName(user).slice(0, 1).toUpperCase()}</span>
+                <Avatar name={displayName(user)} url={user.avatar_url} size="small" />
                 <span className="nav__user-name">{displayName(user)}</span>
               </NavLink>
             ) : (

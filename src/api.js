@@ -118,9 +118,29 @@ export function getMe() {
   return request('/auth/me')
 }
 
-/** Сменить ник (null — убрать и снова показывать имя из Telegram). Возвращает обновлённого «меня». */
-export function updateNickname(nickname) {
-  return request('/auth/me', { method: 'PATCH', body: JSON.stringify({ nickname }) })
+/**
+ * Настройки профиля: { nickname?, gender? } — меняются только присланные поля.
+ * nickname: null — снова имя из Telegram; gender: 'm' | 'f' | null. Возвращает обновлённого «меня».
+ */
+export function updateProfile(changes) {
+  return request('/auth/me', { method: 'PATCH', body: JSON.stringify(changes) })
+}
+
+/** Своя аватарка: картинка (уже обрезанный квадрат). Возвращает обновлённого «меня». */
+export function uploadAvatar(blob) {
+  const form = new FormData()
+  form.append('file', blob, 'avatar.jpg')
+  return request('/auth/me/avatar', { method: 'PUT', body: form })
+}
+
+/** Вернуть фото из Telegram (сервер подтянет его за пару секунд). */
+export function resetMyAvatar() {
+  return request('/auth/me/avatar', { method: 'DELETE' })
+}
+
+/** Админ: сбросить неприличную аватарку ученика. */
+export function resetAvatar(userId) {
+  return request(`/auth/users/${userId}/avatar`, { method: 'DELETE' })
 }
 
 /** Админ: сбросить неприличный ник ученика. */

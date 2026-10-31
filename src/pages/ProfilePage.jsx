@@ -1,14 +1,20 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
-import { updateNickname } from '../api.js'
 import { displayName, useAuth } from '../auth.jsx'
 import ActivityChart from '../components/ActivityChart.jsx'
+import Avatar from '../components/Avatar.jsx'
+import ProfileSettings from '../components/ProfileSettings.jsx'
 import { useAchievements, useStats } from '../queries.js'
 
-const NICK_MIN = 3
-const NICK_MAX = 20
+// «Занимаюсь с января 2026»: месяц в родительном падеже.
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа',
+  'сентября', 'октября', 'ноября', 'декабря']
+
+function sinceText(iso) {
+  const date = new Date(iso)
+  return `Занимаюсь с ${MONTHS[date.getMonth()]} ${date.getFullYear()}`
+}
 
 export default function ProfilePage() {
   const { user, checking, logout } = useAuth()
@@ -18,34 +24,31 @@ export default function ProfilePage() {
   const error = stats ? null : statsQuery.error?.message
   // Достижения выдаёт фоновый воркер через RabbitMQ — обычно за секунду после ответа.
   const achievements = useAchievements().data ?? []
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   if (checking) return <p className="muted">Загрузка…</p>
   if (!user) return <Navigate to="/login" replace />
 
-  const telegramName = [user.first_name, user.last_name].filter(Boolean).join(' ')
-  const joined = new Date(user.created_at).toLocaleDateString('ru-RU', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  })
 
   return (
     <section>
       <div className="profile">
-        <div className="avatar">{displayName(user).slice(0, 1).toUpperCase()}</div>
+        <Avatar name={displayName(user)} url={user.avatar_url} />
         <div className="profile__info">
           <h1>{displayName(user)}</h1>
-          <p className="muted">
-            {user.nickname ? `В Telegram: ${telegramName}` : telegramName}
-            {user.username && <> · @{user.username}</>}
-          </p>
-          <p className="muted small">На сайте с {joined}</p>
+          {user.username && <p className="muted">@{user.username}</p>}
+          <p className="muted small">{sinceText(user.created_at)}</p>
         </div>
         <div className="profile__actions">
           {user.role === 'admin' && <Link to="/admin" className="btn btn--ghost">Редактор задач</Link>}
           <button className="btn btn--ghost" onClick={logout}>Выйти</button>
+          <button className="btn btn--ghost btn--icon" onClick={() => setSettingsOpen(true)} aria-label="Настройки профиля" title="Настройки профиля">
+            <GearIcon />
+          </button>
         </div>
       </div>
 
-      <NicknameForm user={user} />
+      {settingsOpen && <ProfileSettings onClose={() => setSettingsOpen(false)} />}
 
       {error && <p className="error">Не удалось загрузить статистику: {error}</p>}
       {!stats && !error && <p className="muted">Загрузка статистики…</p>}
@@ -56,77 +59,6 @@ export default function ProfilePage() {
 }
 
 // Ник виден всем: в рейтинге и шапке сайта. Имя и @username из Telegram видит только сам ученик.
-function NicknameForm({ user }) {
-  const { updateUser } = useAuth()
-  const queryClient = useQueryClient()
-  const [value, setValue] = useState(user.nickname ?? '')
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState(null) // { ok: bool, text }
-
-  const trimmed = value.trim()
-  const localError = !trimmed
-    ? null
-    : trimmed.length < NICK_MIN || trimmed.length > NICK_MAX
-      ? `От ${NICK_MIN} до ${NICK_MAX} символов`
-      : !/^[\p{L}\p{N}_-]+$/u.test(trimmed)
-        ? 'Только буквы, цифры, «_» и «-»'
-        : null
-  const unchanged = trimmed === (user.nickname ?? '')
-
-  async function save(nickname) {
-    setSaving(true)
-    setMessage(null)
-    try {
-      const me = await updateNickname(nickname)
-      updateUser(me)
-      setValue(me.nickname ?? '')
-      setMessage({ ok: true, text: me.nickname ? 'Ник сохранён' : 'Ник убран — показываем имя из Telegram' })
-      queryClient.invalidateQueries({ queryKey: ['rating'] }) // в рейтинге — новое имя
-    } catch (e) {
-      setMessage({ ok: false, text: e.message })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <form
-      className="panel nickname"
-      onSubmit={(e) => {
-        e.preventDefault()
-        if (!localError && !unchanged) save(trimmed || null)
-      }}
-    >
-      <h2 className="panel__title">Ник на сайте</h2>
-      <p className="muted small panel__hint">
-        Ник видят все в рейтинге и вверху сайта. Без ника показываем имя из Telegram ({user.first_name}).
-      </p>
-      <div className="nickname__row">
-        <input
-          className="nickname__input"
-          value={value}
-          onChange={(e) => { setValue(e.target.value); setMessage(null) }}
-          placeholder="например, kotik_42"
-          maxLength={NICK_MAX + 10}
-          aria-label="Ник"
-          autoComplete="off"
-        />
-        <button className="btn" disabled={saving || Boolean(localError) || unchanged}>
-          {saving ? 'Сохраняем…' : 'Сохранить'}
-        </button>
-        {user.nickname && (
-          <button type="button" className="btn btn--ghost" disabled={saving} onClick={() => save(null)}>
-            Убрать ник
-          </button>
-        )}
-      </div>
-      <p className={`small nickname__note ${localError || message?.ok === false ? 'error' : message ? 'success' : 'muted'}`}>
-        {localError || message?.text || `${NICK_MIN}–${NICK_MAX} символов: буквы, цифры, «_» и «-».`}
-      </p>
-    </form>
-  )
-}
-
 function EmptyStats() {
   return (
     <div className="placeholder">
@@ -278,4 +210,13 @@ function timeAgo(iso) {
   const hours = Math.round(minutes / 60)
   if (hours < 24) return `${hours} ч назад`
   return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+}
+
+function GearIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+    </svg>
+  )
 }
