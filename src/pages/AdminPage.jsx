@@ -11,6 +11,8 @@ import {
   uploadTaskFile,
 } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import { plainText } from '../components/Markdown.jsx'
+import MarkdownEditor, { replaceImageSources } from '../components/MarkdownEditor.jsx'
 import { fileIcon, formatSize } from '../components/TaskMedia.jsx'
 import { useAdminTasks, useInvalidate, useNumbers } from '../queries.js'
 
@@ -33,7 +35,7 @@ const emptyParts = (numbers) => numbers.map((number) => ({ number, question: '',
 const FILE_KINDS = {
   image: {
     title: 'Картинки',
-    hint: 'PNG, JPEG, GIF или WebP до 5 МБ. Показываются ученику под условием. Скриншот можно вставить через Ctrl+V.',
+    hint: 'PNG, JPEG, GIF или WebP до 5 МБ. Вставить в нужное место текста — кнопка 🖼 в редакторе или Ctrl+V прямо в поле. Не вставленные в текст показываются под условием.',
     accept: 'image/png,image/jpeg,image/gif,image/webp',
     extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
     maxMb: 5,
@@ -171,7 +173,7 @@ function AdminRow({ task, onEdit, onArchive }) {
   return (
     <li className="admin-list__row">
       <span className="task__id">id {task.id}</span>
-      <span className="admin-list__text">{task.statement}</span>
+      <span className="admin-list__text">{plainText(task.statement)}</span>
       <span className="admin-list__files muted small" title="Картинки · файлы к заданию">
         {task.images?.length > 0 && `🖼 ${task.images.length} `}
         {task.attachments?.length > 0 && `📎 ${task.attachments.length}`}
@@ -233,7 +235,7 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
       else if (file.size > rules.maxMb * 1024 * 1024) problems.push(`«${file.name}» больше ${rules.maxMb} МБ`)
       else if (already + accepted.length >= MAX_FILES_PER_KIND) problems.push(`«${file.name}» — не больше ${MAX_FILES_PER_KIND} шт.`)
       else accepted.push({
-        key: `${Date.now()}-${Math.random()}`,
+        key: Math.random().toString(36).slice(2, 10), // короткий: виден в тексте как ![](pending:…)
         file,
         kind,
         preview: kind === 'image' ? URL.createObjectURL(file) : null,
@@ -241,6 +243,39 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
     }
     setFileError(problems.length ? problems.join('; ') : null)
     if (accepted.length) setPending((list) => [...list, ...accepted])
+    return accepted
+  }
+
+  // ---------- Картинки в тексте (Markdown) ----------
+
+  // Что можно вставить в текст: уже загруженные (кроме отмеченных на удаление) и новые.
+  const insertable = [
+    ...existing.image.filter((f) => !removed.has(f.id)).map((f) => ({ src: f.url, name: f.name, preview: fileUrl(f) })),
+    ...pending.filter((p) => p.kind === 'image').map((p) => ({ src: `pending:${p.key}`, name: p.file.name, preview: p.preview })),
+  ]
+  // Картинка, вставленная из редактора (кнопка 🖼, Ctrl+V, перетаскивание), — новая картинка задачи.
+  const addImagesFromEditor = (files) =>
+    addFiles(files.map((f, i) => (f.name && f.name !== 'image.png' ? f : renamed(f, i))), 'image').map((p) => `pending:${p.key}`)
+  const resolveImage = (src) => pending.find((p) => `pending:${p.key}` === src)?.preview
+  const editorProps = { images: insertable, onAddImages: addImagesFromEditor, resolveImage, disabled: saving }
+
+  /** Все тексты задачи с подменой адресов картинок (см. replaceImageSources). */
+  function withImages(data, replacements) {
+    const fix = (text) => replaceImageSources(text, replacements)
+    const out = { ...data, statement: fix(data.statement), explanation: fix(data.explanation) }
+    if (data.parts) out.parts = data.parts.map((p) => ({ ...p, question: fix(p.question), explanation: fix(p.explanation) }))
+    return out
+  }
+
+  /** Адреса картинок, которых не будет: удалённые файлы и убранные из списка новые. */
+  function goneImages(data) {
+    const gone = {}
+    for (const f of existing.image) if (removed.has(f.id)) gone[f.url] = null
+    const texts = [data.statement, data.explanation, ...(data.parts ?? []).flatMap((p) => [p.question, p.explanation])]
+    for (const match of texts.join('\n').matchAll(/\]\((pending:[^)\s]+)\)/g)) {
+      if (!pending.some((p) => `pending:${p.key}` === match[1])) gone[match[1]] = null
+    }
+    return gone
   }
 
   function dropPending(key) {
@@ -297,8 +332,9 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
       data.correct_answer = form.correct_answer.trim()
     }
     let task
+    const saved = withImages(data, goneImages(data))
     try {
-      task = isNew ? await createTask(data) : await updateTask(initial.id, data)
+      task = isNew ? await createTask(saved) : await updateTask(initial.id, saved)
     } catch (e) {
       setError(e.message)
       setSaving(false)
@@ -314,11 +350,27 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
         failures.push(`не удалился файл id ${id}: ${e.message}`)
       }
     }
+    const uploaded = {} // pending:… → /files/… (или null, если не загрузилась)
     for (const item of pending) {
       try {
-        await uploadTaskFile(task.id, item.file, item.kind)
+        const file = await uploadTaskFile(task.id, item.file, item.kind)
+        uploaded[`pending:${item.key}`] = file.url
       } catch (e) {
+        uploaded[`pending:${item.key}`] = null
         failures.push(`«${item.file.name}»: ${e.message}`)
+      }
+    }
+    // Вставленные в текст новые картинки получили адреса — подставляем их вместо заглушек.
+    const final = withImages(saved, uploaded)
+    const changed = ['statement', 'explanation'].filter((k) => final[k] !== saved[k])
+    const partsChanged = saved.parts && JSON.stringify(final.parts) !== JSON.stringify(saved.parts)
+    if (changed.length || partsChanged) {
+      const patch = Object.fromEntries(changed.map((k) => [k, final[k]]))
+      if (partsChanged) patch.parts = final.parts
+      try {
+        await updateTask(task.id, patch)
+      } catch (e) {
+        failures.push(`не удалось вставить картинки в текст: ${e.message}`)
       }
     }
     onSaved(
@@ -333,28 +385,26 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
         {isNew ? `Новая задача · № ${code} ${numberTitle ?? ''}` : `Задача id ${initial.id} · № ${form.exam_number}`}
       </h2>
 
-      <label className="field">
-        <span>{partNumbers ? 'Условие игры (общее для 19, 20, 21) *' : 'Условие *'}</span>
-        <textarea rows={5} required value={form.statement} onChange={(e) => set('statement', e.target.value)} />
-      </label>
+      <MarkdownEditor
+        label={partNumbers ? 'Условие игры (общее для 19, 20, 21)' : 'Условие'}
+        required
+        rows={8}
+        value={form.statement}
+        onChange={(v) => set('statement', v)}
+        {...editorProps}
+      />
 
       {partNumbers && parts.map((p, index) => (
         <fieldset key={p.number} className="admin-part">
           <legend>Задание {p.number}</legend>
+          <MarkdownEditor label="Вопрос" required rows={3} value={p.question}
+            onChange={(v) => setPart(index, 'question', v)} {...editorProps} />
           <label className="field">
-            <span>Вопрос *</span>
-            <textarea rows={3} required value={p.question} onChange={(e) => setPart(index, 'question', e.target.value)} />
+            <span>Ответ *</span>
+            <input required maxLength={100} value={p.correct_answer} onChange={(e) => setPart(index, 'correct_answer', e.target.value)} placeholder="28 48" />
           </label>
-          <div className="field-row">
-            <label className="field">
-              <span>Ответ *</span>
-              <input required maxLength={100} value={p.correct_answer} onChange={(e) => setPart(index, 'correct_answer', e.target.value)} placeholder="28 48" />
-            </label>
-            <label className="field">
-              <span>Разбор</span>
-              <input value={p.explanation ?? ''} onChange={(e) => setPart(index, 'explanation', e.target.value)} />
-            </label>
-          </div>
+          <MarkdownEditor label={`Разбор ${p.number}`} rows={2} value={p.explanation ?? ''}
+            onChange={(v) => setPart(index, 'explanation', v)} {...editorProps} />
         </fieldset>
       ))}
 
@@ -378,10 +428,13 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
         </label>
       </div>
 
-      <label className="field">
-        <span>Разбор</span>
-        <textarea rows={3} value={form.explanation} onChange={(e) => set('explanation', e.target.value)} />
-      </label>
+      <MarkdownEditor
+        label="Разбор (виден ученику после ответа)"
+        rows={4}
+        value={form.explanation}
+        onChange={(v) => set('explanation', v)}
+        {...editorProps}
+      />
 
       <div className="field-row">
         <label className="field">

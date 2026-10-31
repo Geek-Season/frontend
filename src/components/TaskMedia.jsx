@@ -1,10 +1,13 @@
 import { fileUrl } from '../api.js'
+import { imagesInText } from './Markdown.jsx'
 
 // Картинки и файлы к задаче — под условием.
 // Картинки показываются сразу (нажатие открывает оригинал в новой вкладке),
 // файлы к заданию — списком ссылок для скачивания, как на ЕГЭ.
+// Картинки, которые автор вставил прямо в текст условия или вопроса, здесь не повторяются.
 export default function TaskMedia({ task }) {
-  const images = task.images ?? []
+  const inText = imagesInText(task.statement, task.question, ...(task.parts ?? []).map((p) => p.question))
+  const images = (task.images ?? []).filter((image) => !inText.has(image.url))
   const attachments = task.attachments ?? []
   if (!task.image_url && images.length === 0 && attachments.length === 0) return null
 

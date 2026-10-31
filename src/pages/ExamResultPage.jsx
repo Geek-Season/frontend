@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
 
 import { useAuth } from '../auth.jsx'
+import Markdown from '../components/Markdown.jsx'
 import TaskMedia from '../components/TaskMedia.jsx'
 import { useExam } from '../queries.js'
 
@@ -83,10 +84,10 @@ export default function ExamResultPage() {
               </span>
               <span className="review__points muted small">{i.is_correct ? i.points : 0}/{i.points}</span>
             </summary>
-            <p className="task__statement">{i.statement}</p>
+            <Markdown className="task__statement" text={i.statement} />
             <TaskMedia task={i} />
-            {i.question && <p className="part__question"><span className="part__number">{i.exam_number}</span>{i.question}</p>}
-            {i.explanation && <p className="verdict__explanation">{i.explanation}</p>}
+            {i.question && <div className="part__question"><span className="part__number">{i.exam_number}</span><Markdown text={i.question} /></div>}
+            {i.explanation && <Markdown className="verdict__explanation" text={i.explanation} />}
             <Link to={`/tasks/${cardCode(i)}`} className="small">Задачи номера {cardCode(i)} →</Link>
           </details>
         ))}

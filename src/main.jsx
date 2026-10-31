@@ -1,11 +1,10 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { AuthProvider } from './auth.jsx'
 import Layout from './components/Layout.jsx'
-import AdminPage from './pages/AdminPage.jsx'
 import ExamPage from './pages/ExamPage.jsx'
 import ExamResultPage from './pages/ExamResultPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
@@ -16,6 +15,10 @@ import ProfilePage from './pages/ProfilePage.jsx'
 import RatingPage from './pages/RatingPage.jsx'
 import { queryClient } from './queryClient.js'
 import './styles.css'
+
+// Редактор задач (с панелью Markdown и загрузкой файлов) нужен только админу —
+// грузится отдельным файлом при открытии страницы, а не со всем сайтом.
+const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
 
 // Адреса страниц сайта:
 //   /               — сетка номеров ЕГЭ (старый адрес /tasks ведёт сюда же)
@@ -43,7 +46,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/exam" element={<ExamPage />} />
             <Route path="/exam/:id" element={<ExamResultPage />} />
             <Route path="/rating" element={<RatingPage />} />
-            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin" element={<Suspense fallback={<p className="muted">Загрузка…</p>}><AdminPage /></Suspense>} />
             <Route path="*" element={<PlaceholderPage title="Страница не найдена" />} />
           </Route>
         </Routes>
