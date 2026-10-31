@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '../auth.jsx'
 import { useNumbers, usePrefetchNumberTasks } from '../queries.js'
+
+const PREFETCH_DELAY_MS = 150
 
 // Страница «Задания»: сетка карточек с номерами ЕГЭ.
 export default function NumbersPage() {
@@ -12,8 +14,16 @@ export default function NumbersPage() {
   // Вошёл или вышел ученик — другой ключ кэша (у вошедшего в ответе есть solved).
   const { data: numbers = [], isPending: loading, error: queryError } = useNumbers()
   const error = queryError?.message
-  // Наведение на карточку — задачи номера начинают грузиться заранее.
+  // Курсор задержался на карточке — задачи номера начинают грузиться заранее.
+  // Пролёт курсора над сеткой (меньше PREFETCH_DELAY_MS на карточке) ничего не грузит.
   const prefetch = usePrefetchNumberTasks()
+  const hoverTimer = useRef(null)
+  const startPrefetch = (code) => {
+    clearTimeout(hoverTimer.current)
+    hoverTimer.current = setTimeout(() => prefetch(code), PREFETCH_DELAY_MS)
+  }
+  const cancelPrefetch = () => clearTimeout(hoverTimer.current)
+  useEffect(() => cancelPrefetch, [])
 
   const q = query.trim().toLowerCase()
   const visible = numbers.filter(
@@ -46,9 +56,11 @@ export default function NumbersPage() {
             key={n.code}
             to={`/tasks/${n.code}`}
             className="number-card"
-            onMouseEnter={() => prefetch(n.code)}
-            onFocus={() => prefetch(n.code)}
-            onTouchStart={() => prefetch(n.code)}
+            onMouseEnter={() => startPrefetch(n.code)}
+            onMouseLeave={cancelPrefetch}
+            onFocus={() => startPrefetch(n.code)}
+            onBlur={cancelPrefetch}
+            onTouchStart={() => prefetch(n.code)} // касание — уже почти нажатие: грузим сразу
           >
             <span className="number-card__code">{n.code}</span>
             <span className="number-card__title">{n.title}</span>

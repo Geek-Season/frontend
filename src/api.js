@@ -27,8 +27,10 @@ export class ApiError extends Error {
 }
 
 async function request(path, options = {}) {
-  // Файлы уходят формой (FormData): заголовок с границей частей браузер поставит сам.
-  const headers = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }
+  // Content-Type — только когда есть JSON-тело. Файлы (FormData) — без него: заголовок
+  // с границей частей браузер поставит сам. У GET тела нет, и без лишнего заголовка
+  // запрос гостя «простой»: браузер не шлёт перед ним проверочный OPTIONS (CORS).
+  const headers = typeof options.body === 'string' ? { 'Content-Type': 'application/json' } : {}
   if (authToken) headers.Authorization = `Bearer ${authToken}`
 
   const response = await fetch(BASE + path, { headers, ...options })
