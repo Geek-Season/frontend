@@ -7,13 +7,64 @@ import { useAuth } from '../auth.jsx'
 
 const POLL_MS = 2000
 
+// ---------- QR-ключ: один на несколько заходов ----------
+//
+// Каждый ключ — запрос к серверу и запись в Redis на 5 минут. Поэтому, пока ключ
+// не истёк, повторный заход на «Войти» (и F5) показывает тот же QR без запроса.
+// Ключ хранится в sessionStorage — только в этой вкладке; без него — в памяти.
+
+const QR_STORAGE_KEY = 'geek-season-qr'
+const MIN_LEFT_MS = 20 * 1000 // ключ, которому осталось меньше 20 с, не показываем: не успеть отсканировать
+let memoryQr = null
+let pendingQr = null // идущий запрос: два одновременных открытия страницы не создадут два ключа
+
+function readSavedQr() {
+  let saved = memoryQr
+  try {
+    saved = JSON.parse(sessionStorage.getItem(QR_STORAGE_KEY)) ?? saved
+  } catch {
+    // sessionStorage недоступен (приватный режим и т. п.) — остаётся копия в памяти
+  }
+  return saved && saved.expiresAt - Date.now() > MIN_LEFT_MS ? saved : null
+}
+
+function saveQr(qr) {
+  memoryQr = qr
+  try {
+    if (qr) sessionStorage.setItem(QR_STORAGE_KEY, JSON.stringify(qr))
+    else sessionStorage.removeItem(QR_STORAGE_KEY)
+  } catch {
+    // без sessionStorage ключ переживёт переходы по сайту, но не F5
+  }
+}
+
+/** Ключ для QR: сохранённый, если он ещё действует, иначе — новый с сервера. */
+function getQr(forceNew) {
+  if (!forceNew) {
+    const saved = readSavedQr()
+    if (saved) return Promise.resolve(saved)
+  }
+  pendingQr ??= startTelegramLogin()
+    .then((data) => {
+      const qr = { token: data.token, bot_link: data.bot_link, expiresAt: Date.now() + data.expires_in * 1000 }
+      saveQr(qr)
+      return qr
+    })
+    .finally(() => {
+      pendingQr = null
+    })
+  return pendingQr
+}
+
+const secondsUntil = (moment) => Math.max(0, Math.round((moment - Date.now()) / 1000))
+
 // Страница входа: QR-код на бота + запасной вариант — код из /login.
 export default function LoginPage() {
   const { user, login } = useAuth()
   const navigate = useNavigate()
 
   // Состояние QR-входа
-  const [session, setSession] = useState(null) // { token, bot_link, expires_in }
+  const [session, setSession] = useState(null) // { token, bot_link, expiresAt }
   const [status, setStatus] = useState('loading') // loading | pending | declined | expired | error
   const [error, setError] = useState(null)
   const [secondsLeft, setSecondsLeft] = useState(0)
@@ -25,20 +76,21 @@ export default function LoginPage() {
   const [sendingCode, setSendingCode] = useState(false)
 
   function finishLogin(result) {
+    saveQr(null) // ключ использован (или вход по коду) — больше не нужен
     login(result.access_token, result.user)
     navigate('/profile', { replace: true })
   }
 
-  // 1. Получаем новый ключ для QR.
+  // 1. Ключ для QR: прежний, если ещё действует; новый — по кнопке «Показать новый код».
   useEffect(() => {
     let cancelled = false
     setStatus('loading')
     setError(null)
-    startTelegramLogin()
-      .then((data) => {
+    getQr(attempt > 0)
+      .then((qr) => {
         if (cancelled) return
-        setSession(data)
-        setSecondsLeft(data.expires_in)
+        setSession(qr)
+        setSecondsLeft(secondsUntil(qr.expiresAt))
         setStatus('pending')
       })
       .catch((e) => {
@@ -62,7 +114,10 @@ export default function LoginPage() {
         const result = await getLoginStatus(session.token)
         if (cancelled) return
         if (result.status === 'confirmed') return finishLogin(result)
-        if (result.status !== 'pending') return setStatus(result.status)
+        if (result.status !== 'pending') {
+          saveQr(null) // устарел или отменён в боте — повторно не показываем
+          return setStatus(result.status)
+        }
       } catch {
         // сеть моргнула — просто попробуем ещё раз
       }
@@ -80,16 +135,16 @@ export default function LoginPage() {
   useEffect(() => {
     if (status !== 'pending') return
     const timer = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          setStatus('expired')
-          return 0
-        }
-        return s - 1
-      })
+      // Считаем от срока ключа, а не «минус секунда»: вкладка в фоне тикает реже.
+      const left = secondsUntil(session.expiresAt)
+      setSecondsLeft(left)
+      if (left <= 0) {
+        saveQr(null)
+        setStatus('expired')
+      }
     }, 1000)
     return () => clearInterval(timer)
-  }, [status])
+  }, [status, session])
 
   async function submitCode(event) {
     event.preventDefault()
