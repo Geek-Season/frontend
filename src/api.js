@@ -19,6 +19,9 @@ export function setUnauthorizedHandler(handler) {
   onUnauthorized = handler
 }
 
+// Текст ответа сервера (403), если аккаунт заблокирован.
+export const BLOCKED = 'Аккаунт заблокирован'
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message)
@@ -39,6 +42,11 @@ async function request(path, options = {}) {
     // Токен больше не действует: выходим, чтобы сайт не делал вид, что ученик вошёл,
     // а его ответы не терялись молча.
     onUnauthorized?.()
+  }
+  if (response.status === 403 && headers.Authorization) {
+    // Админ заблокировал аккаунт: тоже выходим, страница входа скажет почему.
+    const text = await response.clone().json().then((b) => b.detail, () => null)
+    if (text === BLOCKED) onUnauthorized?.('blocked')
   }
 
   if (!response.ok) {
@@ -146,6 +154,50 @@ export function resetAvatar(userId) {
 /** Админ: сбросить неприличный ник ученика. */
 export function resetNickname(userId) {
   return request(`/auth/users/${userId}/nickname`, { method: 'DELETE' })
+}
+
+// ---------- Админка: ученики и журнал ----------
+
+/** Список учеников: {q, filter: all|admins|blocked|no_rank, sort: new|recent|pts|solved|name, limit, offset}. */
+export function getAdminUsers(params = {}) {
+  const query = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null))
+  return request(`/admin/users?${query}`)
+}
+
+/** Карточка ученика: профиль, PTS, ранг, прогноз, статистика и последние действия админов. */
+export function getAdminUser(id) {
+  return request(`/admin/users/${id}`)
+}
+
+/** Изменить присланные поля: {nickname (null — сбросить), created_at, role, blocked}. */
+export function patchAdminUser(id, body) {
+  return request(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
+}
+
+/** Выставить PTS: {pts: 1500} или {rank: 'hero'}. */
+export function setUserPts(id, body) {
+  return request(`/admin/users/${id}/pts`, { method: 'POST', body: JSON.stringify(body) })
+}
+
+/** Сбросить калибровку: следующий пробник ученика снова будет входным. */
+export function recalibrateUser(id) {
+  return request(`/admin/users/${id}/recalibrate`, { method: 'POST' })
+}
+
+/** Удалить всю статистику ученика (ответы, пробники, PTS, достижения). */
+export function resetUserStats(id) {
+  return request(`/admin/users/${id}/reset-stats`, { method: 'POST' })
+}
+
+/** Сбросить аватарку из карточки ученика (возвращает обновлённую карточку). */
+export function resetUserAvatar(id) {
+  return request(`/admin/users/${id}/avatar`, { method: 'DELETE' })
+}
+
+/** Журнал действий админов: {user_id, before, limit} → {items, next_before}. */
+export function getAdminActions(params = {}) {
+  const query = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null))
+  return request(`/admin/actions?${query}`)
 }
 
 // ---------- Прогресс ----------

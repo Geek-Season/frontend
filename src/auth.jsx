@@ -6,7 +6,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 
-import { getMe, setAuthToken, setUnauthorizedHandler } from './api.js'
+import { BLOCKED, getMe, setAuthToken, setUnauthorizedHandler } from './api.js'
 import { queryClient } from './queryClient.js'
 
 const STORAGE_KEY = 'geek-season-token'
@@ -58,18 +58,23 @@ export function AuthProvider({ children }) {
         setUser(me)
         store(USER_ID_KEY, me.id)
       })
-      .catch(() => logout())
+      .catch((e) => logout(e?.message === BLOCKED ? 'blocked' : undefined))
       .finally(() => setChecking(false))
   }, [savedToken])
 
+  // Админ заблокировал аккаунт — страница входа скажет об этом (до следующего входа).
+  const [blocked, setBlocked] = useState(false)
+
   function login(token, userData) {
+    setBlocked(false)
     storeToken(token)
     store(USER_ID_KEY, userData.id)
     setAuthToken(token)
     setUser(userData)
   }
 
-  function logout() {
+  function logout(reason) {
+    if (reason === 'blocked') setBlocked(true)
     storeToken(null)
     store(USER_ID_KEY, null)
     setAuthToken(null)
@@ -81,14 +86,14 @@ export function AuthProvider({ children }) {
     setTimeout(() => queryClient.clear(), 0)
   }
 
-  // Сервер ответил 401 на запрос с токеном — токен истёк: выходим.
+  // Сервер ответил 401 на запрос с токеном — токен истёк: выходим (403 «заблокирован» — тоже).
   useEffect(() => {
     setUnauthorizedHandler(logout)
     return () => setUnauthorizedHandler(null)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, checking, savedUserId, login, logout, updateUser: setUser }}>
+    <AuthContext.Provider value={{ user, checking, savedUserId, blocked, login, logout, updateUser: setUser }}>
       {children}
     </AuthContext.Provider>
   )
