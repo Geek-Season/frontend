@@ -1,8 +1,14 @@
+import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
-import { useAuth } from '../auth.jsx'
+import { updateNickname } from '../api.js'
+import { displayName, useAuth } from '../auth.jsx'
 import ActivityChart from '../components/ActivityChart.jsx'
 import { useAchievements, useStats } from '../queries.js'
+
+const NICK_MIN = 3
+const NICK_MAX = 20
 
 export default function ProfilePage() {
   const { user, checking, logout } = useAuth()
@@ -16,7 +22,7 @@ export default function ProfilePage() {
   if (checking) return <p className="muted">Загрузка…</p>
   if (!user) return <Navigate to="/login" replace />
 
-  const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ')
+  const telegramName = [user.first_name, user.last_name].filter(Boolean).join(' ')
   const joined = new Date(user.created_at).toLocaleDateString('ru-RU', {
     day: 'numeric', month: 'long', year: 'numeric',
   })
@@ -24,10 +30,13 @@ export default function ProfilePage() {
   return (
     <section>
       <div className="profile">
-        <div className="avatar">{user.first_name.slice(0, 1).toUpperCase()}</div>
+        <div className="avatar">{displayName(user).slice(0, 1).toUpperCase()}</div>
         <div className="profile__info">
-          <h1>{fullName}</h1>
-          {user.username && <p className="muted">@{user.username}</p>}
+          <h1>{displayName(user)}</h1>
+          <p className="muted">
+            {user.nickname ? `В Telegram: ${telegramName}` : telegramName}
+            {user.username && <> · @{user.username}</>}
+          </p>
           <p className="muted small">На сайте с {joined}</p>
         </div>
         <div className="profile__actions">
@@ -36,11 +45,85 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      <NicknameForm user={user} />
+
       {error && <p className="error">Не удалось загрузить статистику: {error}</p>}
       {!stats && !error && <p className="muted">Загрузка статистики…</p>}
       {stats && (stats.total_attempts === 0 ? <EmptyStats /> : <Stats stats={stats} />)}
       {achievements.length > 0 && <Achievements items={achievements} />}
     </section>
+  )
+}
+
+// Ник виден всем: в рейтинге и шапке сайта. Имя и @username из Telegram видит только сам ученик.
+function NicknameForm({ user }) {
+  const { updateUser } = useAuth()
+  const queryClient = useQueryClient()
+  const [value, setValue] = useState(user.nickname ?? '')
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState(null) // { ok: bool, text }
+
+  const trimmed = value.trim()
+  const localError = !trimmed
+    ? null
+    : trimmed.length < NICK_MIN || trimmed.length > NICK_MAX
+      ? `От ${NICK_MIN} до ${NICK_MAX} символов`
+      : !/^[\p{L}\p{N}_-]+$/u.test(trimmed)
+        ? 'Только буквы, цифры, «_» и «-»'
+        : null
+  const unchanged = trimmed === (user.nickname ?? '')
+
+  async function save(nickname) {
+    setSaving(true)
+    setMessage(null)
+    try {
+      const me = await updateNickname(nickname)
+      updateUser(me)
+      setValue(me.nickname ?? '')
+      setMessage({ ok: true, text: me.nickname ? 'Ник сохранён' : 'Ник убран — показываем имя из Telegram' })
+      queryClient.invalidateQueries({ queryKey: ['rating'] }) // в рейтинге — новое имя
+    } catch (e) {
+      setMessage({ ok: false, text: e.message })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form
+      className="panel nickname"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!localError && !unchanged) save(trimmed || null)
+      }}
+    >
+      <h2 className="panel__title">Ник на сайте</h2>
+      <p className="muted small panel__hint">
+        Ник видят все в рейтинге и вверху сайта. Без ника показываем имя из Telegram ({user.first_name}).
+      </p>
+      <div className="nickname__row">
+        <input
+          className="nickname__input"
+          value={value}
+          onChange={(e) => { setValue(e.target.value); setMessage(null) }}
+          placeholder="например, kotik_42"
+          maxLength={NICK_MAX + 10}
+          aria-label="Ник"
+          autoComplete="off"
+        />
+        <button className="btn" disabled={saving || Boolean(localError) || unchanged}>
+          {saving ? 'Сохраняем…' : 'Сохранить'}
+        </button>
+        {user.nickname && (
+          <button type="button" className="btn btn--ghost" disabled={saving} onClick={() => save(null)}>
+            Убрать ник
+          </button>
+        )}
+      </div>
+      <p className={`small nickname__note ${localError || message?.ok === false ? 'error' : message ? 'success' : 'muted'}`}>
+        {localError || message?.text || `${NICK_MIN}–${NICK_MAX} символов: буквы, цифры, «_» и «-».`}
+      </p>
+    </form>
   )
 }
 

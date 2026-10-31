@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
-import { useAuth } from '../auth.jsx'
+import { displayName, useAuth } from '../auth.jsx'
 
 // Общая рамка всех страниц: шапка с меню, а ниже — текущая страница (<Outlet />).
 export default function Layout() {
@@ -37,8 +37,8 @@ export default function Layout() {
             {user?.role === 'admin' && <NavLink to="/admin" className="nav__link nav__link--admin">Редактор</NavLink>}
             {!checking && (user ? (
               <NavLink to="/profile" className="nav__link nav__user">
-                <span className="avatar avatar--small">{user.first_name.slice(0, 1).toUpperCase()}</span>
-                <span className="nav__user-name">{user.first_name}</span>
+                <span className="avatar avatar--small">{displayName(user).slice(0, 1).toUpperCase()}</span>
+                <span className="nav__user-name">{displayName(user)}</span>
               </NavLink>
             ) : (
               <NavLink to="/login" className="nav__link nav__login">Войти</NavLink>

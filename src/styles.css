@@ -521,3 +521,17 @@ div.part__question .md { flex: 1; min-width: 0; }
 .mde__cheatsheet td { padding: 4px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .mde__cheatsheet code { font-family: var(--mono); font-size: 12px; white-space: pre-wrap; }
 .admin-part .mde { margin-bottom: 10px; }
+
+/* Ник в профиле */
+.nickname__row { display: flex; gap: 8px; flex-wrap: wrap; }
+.nickname__input {
+  flex: 1 1 200px; min-width: 0; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit;
+}
+.nickname__input:focus { outline: none; border-color: var(--accent); }
+.nickname__note { margin: 8px 0 0; }
+.leaderboard__reset {
+  margin-left: 8px; padding: 1px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: none; color: var(--muted); font-size: 12px; cursor: pointer;
+}
+.leaderboard__reset:hover { color: var(--bad); border-color: var(--bad); }
