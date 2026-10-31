@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { checkAnswer, getSolution } from '../api.js'
 import Markdown from './Markdown.jsx'
+import { announceRankUp } from './RankUp.jsx'
 import TaskMedia from './TaskMedia.jsx'
 
 const SOURCE_LABELS = { demo: 'Демо', official: 'Экзамен', approbation: 'Апробация', author: 'Авторская' }
@@ -36,6 +37,7 @@ export default function TaskCard({ task, position, onChecked }) {
       const checked = await checkAnswer(task.id, payload)
       setResult(checked)
       if (checked.solution_available) setAvailable(true)
+      announceRankUp(checked.rank_up)
       onChecked?.(task.id, checked.is_correct, checked.solution_available)
     } catch (e) {
       setError(e.message)
@@ -136,13 +138,7 @@ export default function TaskCard({ task, position, onChecked }) {
 
       {result && (
         <div className={`verdict ${result.is_correct ? 'verdict--ok' : 'verdict--bad'}`}>
-          <strong>
-            {result.is_correct
-              ? 'Верно!'
-              : hasParts
-                ? `Верно ${result.parts.filter((p) => p.is_correct).length} из ${result.parts.length}.`
-                : 'Неверно.'}
-          </strong>{' '}
+          <VerdictLine result={result} hasParts={hasParts} />{' '}
           {!result.is_correct && result.attempts_left > 0 && (
             <span className="verdict__hint">
               Подумайте ещё — разбор можно будет открыть после {mistakes(result.attempts_left)}.
@@ -186,4 +182,37 @@ function Solution({ solution }) {
       {solution.explanation && <Markdown className="verdict__explanation" text={solution.explanation} />}
     </div>
   )
+}
+
+/**
+ * Первая строка вердикта. Вошедший ученик видит, сколько PTS начислено или снято
+ * (засчитывается только первая попытка по задаче); гость — просто «Верно!» / «Неверно.».
+ * У 19–21 с частично верными ответами PTS может и прибавиться: засчитывается доля верных.
+ */
+function VerdictLine({ result, hasParts }) {
+  const ok = result.is_correct
+  const partial = hasParts && !ok
+  const head = partial
+    ? `Верно ${result.parts.filter((p) => p.is_correct).length} из ${result.parts.length}.`
+    : ok ? 'Верно!' : 'Неверно.'
+
+  if (result.pts_delta == null) {
+    return (
+      <>
+        <strong>{head}</strong>
+        {result.pts_repeat && <span className="verdict__hint"> PTS не изменились — засчитывается только первая попытка.</span>}
+      </>
+    )
+  }
+
+  const points = Math.abs(Math.round(result.pts_delta))
+  const change = points === 0
+    ? <>PTS почти не изменились.</>
+    : result.pts_delta > 0
+      ? <>вам начислено <span className="pts pts--up">{points} PTS</span>.</>
+      : <>с вас снято <span className="pts pts--down">{points} PTS</span>.</>
+
+  if (partial) return <><strong>{head}</strong> {points === 0 ? change : <>{result.pts_delta > 0 ? 'Вам начислено' : 'С вас снято'} <span className={`pts ${result.pts_delta > 0 ? 'pts--up' : 'pts--down'}`}>{points} PTS</span>.</>}</>
+  if (points === 0) return <><strong>{ok ? 'Вы ответили верно.' : 'Вы ответили неверно.'}</strong> {change}</>
+  return <><strong>{ok ? 'Вы ответили верно' : 'Вы ответили неверно'}</strong>, {change}</>
 }

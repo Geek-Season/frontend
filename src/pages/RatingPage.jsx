@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { resetAvatar, resetNickname } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import Avatar from '../components/Avatar.jsx'
+import RankMedal from '../components/RankMedal.jsx'
 import { useRating } from '../queries.js'
 
 const PERIODS = [
@@ -77,6 +78,12 @@ export default function RatingPage() {
                   <Avatar name={rowName(r)} url={r.avatar_url} size="small" />
                   <span className="leaderboard__name">
                     {rowName(r)}
+                    {r.rank && (
+                      <span className="leaderboard__rank" title={r.rank.title}>
+                        <RankMedal rank={r.rank} size={22} />
+                        {r.rank.short}
+                      </span>
+                    )}
                     {r.is_me && <span className="badge badge--me">вы</span>}
                     {isAdmin && r.has_nickname && (
                       <button type="button" className="leaderboard__reset" onClick={() => handleReset(r, 'nickname')}>

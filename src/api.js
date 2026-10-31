@@ -187,6 +187,11 @@ export function finishExam(examId) {
   return request(`/exam/${examId}/finish`, { method: 'POST' })
 }
 
+/** Карточка ранга: { calibrated, rank, pts, games, forecast_primary, forecast_test, rank_min_primary, next_rank, next_min_primary } */
+export function getMyRank() {
+  return request('/me/rank')
+}
+
 // ---------- Рейтинг ----------
 
 /** period: 'week' | 'all' */

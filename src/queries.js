@@ -34,6 +34,7 @@ export const keys = {
   tasksOf: (me, code) => ['tasks', me, code],
   tasks: (me, code, filters) => ['tasks', me, code, filters],
   stats: (me) => ['stats', me],
+  rank: (me) => ['rank', me],
   achievements: (me) => ['achievements', me],
   rating: (me, period) => ['rating', me, period],
   examCurrent: (me) => ['exam', me, 'current'],
@@ -90,6 +91,11 @@ export function usePrefetchNumberTasks() {
 export function useStats() {
   const me = useMe()
   return useQuery({ queryKey: keys.stats(me), queryFn: api.getMyStats, enabled: me !== 'guest' && me !== null })
+}
+
+export function useMyRank() {
+  const me = useMe()
+  return useQuery({ queryKey: keys.rank(me), queryFn: api.getMyRank, enabled: me !== 'guest' && me !== null })
 }
 
 export function useAchievements() {
@@ -203,6 +209,7 @@ export function useInvalidate() {
           && JSON.stringify(q.queryKey) !== JSON.stringify(currentKey),
       })
       queryClient.invalidateQueries({ queryKey: keys.stats(me) })
+      queryClient.invalidateQueries({ queryKey: keys.rank(me) }) // PTS и прогноз
       queryClient.invalidateQueries({ queryKey: keys.achievements(me) })
       if (firstSolve) queryClient.invalidateQueries({ queryKey: ['rating', me] })
     },
@@ -211,7 +218,7 @@ export function useInvalidate() {
     examFinished(id, result) {
       if (result) queryClient.setQueryData(keys.exam(me, id), result)
       queryClient.setQueryData(keys.examCurrent(me), null)
-      for (const key of [keys.examHistory(me), keys.stats(me), keys.achievements(me), keys.numbers(me),
+      for (const key of [keys.examHistory(me), keys.stats(me), keys.rank(me), keys.achievements(me), keys.numbers(me),
         ['tasks', me], ['rating', me]]) {
         queryClient.invalidateQueries({ queryKey: key })
       }

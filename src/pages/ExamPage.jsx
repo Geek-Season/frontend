@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 
-import { finishExam, saveExamAnswer, startExam } from '../api.js'
+import { finishExam, getMe, saveExamAnswer, startExam } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import Markdown from '../components/Markdown.jsx'
+import { announceRankUp } from '../components/RankUp.jsx'
 import TaskMedia from '../components/TaskMedia.jsx'
 import { useCurrentExam, useExamHistory, useInvalidate } from '../queries.js'
 
@@ -28,6 +29,8 @@ export default function ExamPage() {
 // ---------- Старт ----------
 
 function ExamStart({ onStarted }) {
+  const { user } = useAuth()
+  const entrance = !user.rank // ранга ещё нет — этот пробник входной: по нему определится первый ранг
   const history = useExamHistory().data ?? [] // из кэша; обновляется после каждого завершённого пробника
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState(null)
@@ -46,9 +49,16 @@ function ExamStart({ onStarted }) {
   return (
     <section>
       <div className="page-head">
-        <h1>Пробный экзамен</h1>
+        <h1>{entrance ? 'Входной пробник' : 'Пробный экзамен'}</h1>
         <p className="muted">Вариант в формате ЕГЭ: по одной задаче на каждый номер из банка.</p>
       </div>
+
+      {entrance && (
+        <div className="notice">
+          Это ваш первый пробник — как калибровка в Доте: по его результату определится ваш уровень
+          и первый ранг. Решайте честно и без подсказок: так ранг будет точным.
+        </div>
+      )}
 
       <div className="panel exam-rules">
         <ul>
@@ -59,7 +69,7 @@ function ExamStart({ onStarted }) {
           <li>Когда время выйдет, пробник завершится автоматически.</li>
         </ul>
         <button className="btn" onClick={begin} disabled={starting}>
-          {starting ? 'Собираем вариант…' : 'Начать пробник'}
+          {starting ? 'Собираем вариант…' : entrance ? 'Начать входной пробник' : 'Начать пробник'}
         </button>
         {error && <p className="error">{error}</p>}
       </div>
@@ -90,6 +100,8 @@ function ExamStart({ onStarted }) {
 function ExamRun({ exam }) {
   const navigate = useNavigate()
   const invalidate = useInvalidate()
+  const { updateUser } = useAuth()
+  const refreshUser = () => getMe().then(updateUser).catch(() => {})
   const [answers, setAnswers] = useState(() =>
     Object.fromEntries(exam.items.map((i) => [i.position, i.answer ?? ''])),
   )
@@ -119,6 +131,10 @@ function ExamRun({ exam }) {
     // Результат кладём в кэш — страница разбора откроется без запроса; профиль, рейтинг,
     // историю и прогресс по номерам помечаем устаревшими.
     invalidate.examFinished(exam.id, result)
+    if (result?.rank_up) {
+      announceRankUp(result.rank_up, { first: result.calibrated_now })
+      if (result.calibrated_now) refreshUser() // ранг появился — /auth/me теперь с рангом
+    }
     navigate(`/exam/${exam.id}`, { replace: true })
   }
 
