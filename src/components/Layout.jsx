@@ -36,7 +36,7 @@ export default function Layout() {
             <NavLink to="/" end className={`nav__link ${onTasks ? 'active' : ''}`}>Задания</NavLink>
             <NavLink to="/exam" className="nav__link">Пробник</NavLink>
             <NavLink to="/rating" className="nav__link">Рейтинг</NavLink>
-            {user?.role === 'admin' && <NavLink to="/admin" className="nav__link nav__link--admin">Редактор</NavLink>}
+            {user?.role === 'admin' && <NavLink to="/admin" className="nav__link nav__link--admin">Админка</NavLink>}
             {!checking && (user ? (
               <NavLink to="/profile" className="nav__link nav__user">
                 <Avatar name={displayName(user)} url={user.avatar_url} size="small" />

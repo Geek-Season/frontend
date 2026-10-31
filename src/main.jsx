@@ -27,7 +27,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
 //   /profile        — профиль (только для вошедших)
 //   /exam           — пробник (старт или идущий), /exam/12 — результат
 //   /rating         — рейтинг
-//   /admin          — редактор задач (только админ)
+//   /admin          — админка: задачи, ученики (?tab=users), журнал (?tab=log); только админ
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>

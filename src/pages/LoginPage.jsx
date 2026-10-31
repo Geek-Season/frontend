@@ -60,7 +60,7 @@ const secondsUntil = (moment) => Math.max(0, Math.round((moment - Date.now()) / 
 
 // Страница входа: QR-код на бота + запасной вариант — код из /login.
 export default function LoginPage() {
-  const { user, login } = useAuth()
+  const { user, login, blocked } = useAuth()
   const navigate = useNavigate()
 
   // Состояние QR-входа
@@ -167,6 +167,7 @@ export default function LoginPage() {
   return (
     <section className="login">
       <h1>Вход</h1>
+      {blocked && <p className="error">Ваш аккаунт заблокирован администратором.</p>}
       <p className="muted">Через Telegram — без пароля.</p>
 
       <div className="login__grid">

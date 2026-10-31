@@ -41,6 +41,9 @@ export const keys = {
   examHistory: (me) => ['exam', me, 'history'],
   exam: (me, id) => ['exam', me, 'one', String(id)],
   adminTasks: (me, code) => ['admin-tasks', me, code],
+  adminUsers: (me, params) => ['admin-users', me, params],
+  adminUser: (me, id) => ['admin-user', me, String(id)],
+  adminActions: (me) => ['admin-actions', me],
 }
 
 // ---------- Номера и задачи ----------
@@ -148,6 +151,45 @@ export function useExam(id) {
   })
 }
 
+// ---------- Админка: ученики и журнал ----------
+
+export const ADMIN_USERS_PAGE = 50
+
+export function useAdminUsers(params) {
+  const me = useMe()
+  return useInfiniteQuery({
+    queryKey: keys.adminUsers(me, params),
+    queryFn: ({ pageParam }) => api.getAdminUsers({ ...params, limit: ADMIN_USERS_PAGE, offset: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const loaded = pages.reduce((n, page) => n + page.items.length, 0)
+      return loaded < last.total ? loaded : undefined
+    },
+    placeholderData: (previous) => previous, // пока ищем — показываем прошлый список, а не «Загрузка…»
+    enabled: me !== null && me !== 'guest',
+  })
+}
+
+export function useAdminUser(id) {
+  const me = useMe()
+  return useQuery({
+    queryKey: keys.adminUser(me, id),
+    queryFn: () => api.getAdminUser(id),
+    enabled: id != null && me !== null && me !== 'guest',
+  })
+}
+
+export function useAdminActions() {
+  const me = useMe()
+  return useInfiniteQuery({
+    queryKey: keys.adminActions(me),
+    queryFn: ({ pageParam }) => api.getAdminActions({ before: pageParam, limit: 50 }),
+    initialPageParam: null,
+    getNextPageParam: (last) => last.next_before ?? undefined,
+    enabled: me !== null && me !== 'guest',
+  })
+}
+
 // ---------- Редактор ----------
 
 export function useAdminTasks(code, enabled) {
@@ -221,6 +263,19 @@ export function useInvalidate() {
       for (const key of [keys.examHistory(me), keys.stats(me), keys.rank(me), keys.achievements(me), keys.numbers(me),
         ['tasks', me], ['rating', me]]) {
         queryClient.invalidateQueries({ queryKey: key })
+      }
+    },
+
+    /** Админ изменил ученика: карточка уже свежая (detail), списки, журнал и рейтинг — перезапросить. */
+    userChanged(detail) {
+      queryClient.setQueryData(keys.adminUser(me, detail.id), detail)
+      for (const key of [['admin-users', me], keys.adminActions(me), ['rating', me]]) {
+        queryClient.invalidateQueries({ queryKey: key })
+      }
+      if (detail.id === me) {
+        for (const key of [keys.stats(me), keys.rank(me), keys.achievements(me), ['exam', me], ['tasks', me], keys.numbers(me)]) {
+          queryClient.invalidateQueries({ queryKey: key })
+        }
       }
     },
 

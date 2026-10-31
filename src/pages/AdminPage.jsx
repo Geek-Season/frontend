@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 import {
   archiveTask,
@@ -15,6 +15,8 @@ import { plainText } from '../components/Markdown.jsx'
 import MarkdownEditor, { replaceImageSources } from '../components/MarkdownEditor.jsx'
 import { fileIcon, formatSize } from '../components/TaskMedia.jsx'
 import { useAdminTasks, useInvalidate, useNumbers } from '../queries.js'
+import JournalTab from './admin/JournalTab.jsx'
+import UsersTab from './admin/UsersTab.jsx'
 
 const EMPTY = {
   statement: '',
@@ -59,9 +61,58 @@ const SOURCES = [
   { value: 'approbation', label: 'Апробация' },
 ]
 
-// /admin — редактор банка задач. Только для роли admin (сервер всё равно проверит сам).
+const TABS = [
+  { key: 'tasks', title: 'Задачи' },
+  { key: 'users', title: 'Ученики' },
+  { key: 'log', title: 'Журнал' },
+]
+
+// /admin — админка: редактор банка задач, ученики, журнал действий админов.
+// Вкладка — в адресе (?tab=users): отдельные страницы на GitHub Pages не нужны, F5 не сбрасывает вкладку.
+// Только для роли admin (сервер всё равно проверит сам).
 export default function AdminPage() {
   const { user, checking } = useAuth()
+  const [params, setParams] = useSearchParams()
+  const tab = TABS.some((t) => t.key === params.get('tab')) ? params.get('tab') : 'tasks'
+
+  if (checking) return <p className="muted">Загрузка…</p>
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role !== 'admin') {
+    return (
+      <div className="placeholder">
+        <h1>Админка</h1>
+        <p>Только для администратора.</p>
+      </div>
+    )
+  }
+
+  return (
+    <section>
+      <div className="page-head">
+        <h1>Админка</h1>
+      </div>
+      <div className="tabs" role="tablist">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
+            className={`tabs__tab ${tab === t.key ? 'active' : ''}`}
+            onClick={() => setParams(t.key === 'tasks' ? {} : { tab: t.key })}
+          >
+            {t.title}
+          </button>
+        ))}
+      </div>
+      {tab === 'tasks' && <TasksTab />}
+      {tab === 'users' && <UsersTab />}
+      {tab === 'log' && <JournalTab />}
+    </section>
+  )
+}
+
+function TasksTab() {
+  const { user } = useAuth()
   const [code, setCode] = useState('1')
   const [editing, setEditing] = useState(null) // null — форма закрыта, {id?, ...поля} — открыта
   const [message, setMessage] = useState(null)
@@ -74,17 +125,6 @@ export default function AdminPage() {
   // Банк изменился — номера и задачи устарели у всех страниц сайта (и у учеников при следующем заходе).
   const invalidate = useInvalidate()
   const reload = () => invalidate.bankChanged()
-
-  if (checking) return <p className="muted">Загрузка…</p>
-  if (!user) return <Navigate to="/login" replace />
-  if (user.role !== 'admin') {
-    return (
-      <div className="placeholder">
-        <h1>Редактор задач</h1>
-        <p>Только для администратора.</p>
-      </div>
-    )
-  }
 
   async function openEdit(id) {
     setMessage(null)
@@ -124,11 +164,8 @@ export default function AdminPage() {
   const current = numbers.find((n) => n.code === code)
 
   return (
-    <section>
-      <div className="page-head">
-        <h1>Редактор задач</h1>
-        <p className="muted">Банк задач по номерам ЕГЭ. Удалённые задачи уходят в архив — статистика учеников не теряется.</p>
-      </div>
+    <>
+      <p className="muted">Банк задач по номерам ЕГЭ. Удалённые задачи уходят в архив — статистика учеников не теряется.</p>
 
       <div className="toolbar">
         <select className="select" value={code} onChange={(e) => { setCode(e.target.value); setEditing(null) }}>
@@ -165,7 +202,7 @@ export default function AdminPage() {
           ))}
         </ul>
       )}
-    </section>
+    </>
   )
 }
 
