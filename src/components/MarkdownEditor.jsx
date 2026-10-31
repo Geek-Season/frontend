@@ -18,6 +18,7 @@ const TOOLS = [
   { title: 'Степень: 2¹⁰', label: <>x<sup>2</sup></>, wrap: ['<sup>', '</sup>'], placeholder: '10' },
   { title: 'Выделение маркером', label: <mark>М</mark>, wrap: ['<mark>', '</mark>'] },
   { title: 'Формула (LaTeX): $27x98876_{22}$', label: 'ƒ(x)', wrap: ['$', '$'], placeholder: 'x_{2}' },
+  { title: 'Ссылка (Ctrl+K)', label: '🔗', key: 'k', link: true },
   { title: 'Код в строке', label: <code>{'<>'}</code>, wrap: ['`', '`'], placeholder: 'код' },
   { title: 'Блок кода (программа)', label: <code>{'{ }'}</code>, block: '```python\n', blockEnd: '\n```', placeholder: 'print(42)' },
   { title: 'Список', label: '•', linePrefix: '- ' },
@@ -54,6 +55,12 @@ export default function MarkdownEditor({
   function apply(tool) {
     const el = area.current
     const selected = value.slice(el.selectionStart, el.selectionEnd)
+    if (tool.link) {
+      // Выделен адрес — он станет ссылкой, остаётся вписать текст. Иначе выделенный текст
+      // станет текстом ссылки, а курсор встанет на место адреса.
+      if (/^https?:\/\/\S+$/.test(selected.trim())) return replaceSelection('[', 'текст ссылки', `](${selected.trim()})`)
+      return replaceSelection(`[${selected || 'ссылка'}](`, 'https://', ')')
+    }
     if (tool.wrap) return replaceSelection(tool.wrap[0], selected || tool.placeholder || 'текст', tool.wrap[1])
     if (tool.block) return replaceSelection(tool.block, selected || tool.placeholder, tool.blockEnd)
     if (tool.insert) return replaceSelection('', '', tool.insert)
@@ -198,6 +205,7 @@ function Cheatsheet() {
     ['$$\\sum_{i=1}^{n} i$$', 'формула отдельной строкой'],
     ['- пункт', 'список'],
     ['| a | b |\\n|---|---|\\n| 1 | 2 |', 'таблица'],
+    ['[учебник](https://kpolyakov.spb.ru)', 'ссылка — кнопка 🔗 или Ctrl+K; адрес https://… и сам станет ссылкой'],
     ['`код`, ```блок кода```', 'код'],
     ['![](/files/….png)', 'картинка в этом месте текста — кнопка 🖼 или Ctrl+V'],
   ]

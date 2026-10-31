@@ -88,6 +88,14 @@ export function checkAnswer(taskId, answer) {
   })
 }
 
+/**
+ * Правильный ответ и разбор: { correct_answer, explanation, parts: [{ number, correct_answer, explanation }] }.
+ * Сервер отдаёт их, только когда задача решена или неверных ответов набралось три (иначе 403).
+ */
+export function getSolution(taskId) {
+  return request(`/tasks/${taskId}/solution`)
+}
+
 // ---------- Вход ----------
 
 /** Ключ для QR: { token, bot_link, expires_in } */

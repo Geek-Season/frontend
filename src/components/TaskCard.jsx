@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { checkAnswer } from '../api.js'
+import { checkAnswer, getSolution } from '../api.js'
 import Markdown from './Markdown.jsx'
 import TaskMedia from './TaskMedia.jsx'
 
@@ -9,6 +9,10 @@ const STATUS_LABELS = { solved: '✓ Решена', failed: '✗ Не решен
 
 // Одна задача: условие, поле ответа, кнопка «Проверить» и результат.
 // У задачи 19–21 вместо одного поля — три вопроса со своими полями (task.parts).
+//
+// Неверный ответ — только «Неверно»: правильный ответ и разбор сервер не присылает,
+// пока ученик не ошибётся трижды (или не решит задачу). Тогда появляется кнопка
+// «Показать ответ и разбор».
 export default function TaskCard({ task, position, onChecked }) {
   const hasParts = task.parts?.length > 0
   const [answer, setAnswer] = useState('')
@@ -16,6 +20,9 @@ export default function TaskCard({ task, position, onChecked }) {
   const [result, setResult] = useState(null) // ответ бэкенда после проверки
   const [checking, setChecking] = useState(false)
   const [error, setError] = useState(null)
+  const [available, setAvailable] = useState(Boolean(task.solution_available)) // можно открыть разбор
+  const [solution, setSolution] = useState(null) // открытый ответ и разбор
+  const [opening, setOpening] = useState(false)
 
   async function handleSubmit(event) {
     event.preventDefault() // не перезагружать страницу при отправке формы
@@ -28,11 +35,24 @@ export default function TaskCard({ task, position, onChecked }) {
         : answer.trim()
       const checked = await checkAnswer(task.id, payload)
       setResult(checked)
-      onChecked?.(task.id, checked.is_correct)
+      if (checked.solution_available) setAvailable(true)
+      onChecked?.(task.id, checked.is_correct, checked.solution_available)
     } catch (e) {
       setError(e.message)
     } finally {
       setChecking(false)
+    }
+  }
+
+  async function openSolution() {
+    setOpening(true)
+    setError(null)
+    try {
+      setSolution(await getSolution(task.id))
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setOpening(false)
     }
   }
 
@@ -79,7 +99,7 @@ export default function TaskCard({ task, position, onChecked }) {
                   />
                   {r && (
                     <span className={r.is_correct ? 'part__ok' : 'part__bad'}>
-                      {r.is_correct ? '✓' : <>✗ правильно: <code>{r.correct_answer}</code></>}
+                      {r.is_correct ? '✓' : '✗'}
                     </span>
                   )}
                 </div>
@@ -123,10 +143,47 @@ export default function TaskCard({ task, position, onChecked }) {
                 ? `Верно ${result.parts.filter((p) => p.is_correct).length} из ${result.parts.length}.`
                 : 'Неверно.'}
           </strong>{' '}
-          {!result.is_correct && !hasParts && <>Правильный ответ: <code>{result.correct_answer}</code></>}
-          {result.explanation && <Markdown className="verdict__explanation" text={result.explanation} />}
+          {!result.is_correct && result.attempts_left > 0 && (
+            <span className="verdict__hint">
+              Подумайте ещё — разбор можно будет открыть после {mistakes(result.attempts_left)}.
+            </span>
+          )}
+          {result.is_correct && result.explanation && (
+            <Markdown className="verdict__explanation" text={result.explanation} />
+          )}
         </div>
       )}
+
+      {available && !solution && !result?.is_correct && (
+        <button type="button" className="btn btn--ghost btn--small task__reveal" onClick={openSolution} disabled={opening}>
+          {opening ? 'Открываем…' : 'Показать ответ и разбор'}
+        </button>
+      )}
+
+      {solution && !result?.is_correct && <Solution solution={solution} />}
     </article>
+  )
+}
+
+/** «1 ошибки», «2 ошибок» — для подсказки «разбор откроется после ещё …» */
+function mistakes(n) {
+  return `ещё ${n} ${n === 1 ? 'ошибки' : 'ошибок'}`
+}
+
+function Solution({ solution }) {
+  return (
+    <div className="verdict verdict--solution">
+      {solution.parts.length > 0 ? (
+        solution.parts.map((p) => (
+          <div key={p.number} className="solution__part">
+            <strong>{p.number}:</strong> <code>{p.correct_answer}</code>
+            {p.explanation && <Markdown className="verdict__explanation" text={p.explanation} />}
+          </div>
+        ))
+      ) : (
+        <><strong>Правильный ответ:</strong> <code>{solution.correct_answer}</code></>
+      )}
+      {solution.explanation && <Markdown className="verdict__explanation" text={solution.explanation} />}
+    </div>
   )
 }

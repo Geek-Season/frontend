@@ -129,6 +129,10 @@ h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; }
 .verdict--bad strong { color: var(--bad); }
 .verdict code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
 .verdict__explanation { margin: 8px 0 0; color: var(--muted); }
+.verdict__hint { color: var(--muted); }
+.verdict--solution { background: var(--surface-2); border: 1px solid var(--border); }
+.solution__part + .solution__part { margin-top: 10px; }
+.task__reveal { margin-top: 12px; }
 
 @media (max-width: 520px) {
   .answer { flex-wrap: wrap; }
