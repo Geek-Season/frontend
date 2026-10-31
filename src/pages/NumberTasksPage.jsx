@@ -9,6 +9,7 @@ const SOURCES = [
   { value: '', label: 'Все' },
   { value: 'demo', label: 'Демо' },
   { value: 'official', label: 'Официальные' },
+  { value: 'approbation', label: 'Апробация' },
   { value: 'author', label: 'Авторские' },
 ]
 

@@ -101,6 +101,7 @@ h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; }
 .badge { padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
 .badge--demo { background: rgba(139, 124, 246, 0.18); color: var(--accent-strong); }
 .badge--official { background: rgba(242, 102, 122, 0.15); color: var(--bad); }
+.badge--approbation { background: rgba(245, 166, 35, 0.15); color: #f5b041; }
 .badge--author { background: rgba(198, 243, 107, 0.12); color: var(--lime); }
 
 .task__statement { white-space: pre-wrap; margin: 14px 0; }
