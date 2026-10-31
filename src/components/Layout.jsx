@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { displayName, useAuth } from '../auth.jsx'
 import Avatar from './Avatar.jsx'
+import { RankUpHost } from './RankUp.jsx'
 
 // Общая рамка всех страниц: шапка с меню, а ниже — текущая страница (<Outlet />).
 export default function Layout() {
@@ -50,6 +51,7 @@ export default function Layout() {
       <main className="container">
         <Outlet />
       </main>
+      <RankUpHost />
     </>
   )
 }

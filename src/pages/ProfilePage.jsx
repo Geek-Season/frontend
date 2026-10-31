@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { displayName, useAuth } from '../auth.jsx'
 import ActivityChart from '../components/ActivityChart.jsx'
 import Avatar from '../components/Avatar.jsx'
 import ProfileSettings from '../components/ProfileSettings.jsx'
-import { useAchievements, useStats } from '../queries.js'
+import RankMedal from '../components/RankMedal.jsx'
+import { useAchievements, useMyRank, useStats } from '../queries.js'
 
 // «Занимаюсь с января 2026»: месяц в родительном падеже.
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа',
@@ -49,6 +50,8 @@ export default function ProfilePage() {
       </div>
 
       {settingsOpen && <ProfileSettings onClose={() => setSettingsOpen(false)} />}
+
+      <RankCard />
 
       {error && <p className="error">Не удалось загрузить статистику: {error}</p>}
       {!stats && !error && <p className="muted">Загрузка статистики…</p>}
@@ -210,6 +213,73 @@ function timeAgo(iso) {
   const hours = Math.round(minutes / 60)
   if (hours < 24) return `${hours} ч назад`
   return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+}
+
+// Карточка ранга: ранг, прогноз балла, PTS и сколько до следующего ранга.
+// PTS и прогноз видит только сам ученик; другим в рейтинге виден только ранг.
+function RankCard() {
+  const { data: info } = useMyRank()
+  const navigate = useNavigate()
+  if (!info) return null
+
+  if (!info.calibrated) {
+    return (
+      <div className="rank-card rank-card--locked">
+        <RankMedal locked size={96} />
+        <div className="rank-card__body">
+          <p className="rank-card__title">Ранг не определён</p>
+          <p className="rank-card__sub">
+            Пройдите входной пробник — по нему определим ваш уровень и первый ранг.
+            PTS за задачи начисляются уже сейчас: <span className="rank-card__pts">{Math.round(info.pts)} PTS</span>
+          </p>
+          <button className="btn" onClick={() => navigate('/exam')}>Пройти входной пробник</button>
+        </div>
+      </div>
+    )
+  }
+
+  const min = info.rank_min_primary
+  const next = info.next_min_primary // null — уже Immortal
+  const slots = next ? Math.min(5, next - min) : 0
+  const inRank = Math.max(0, info.forecast_primary - min)
+  const progress = next ? Math.min(1, (info.forecast_primary - min + 0.5) / (next - min)) : 1
+  const left = next ? Math.max(1, next - info.forecast_primary) : 0
+
+  return (
+    <div className="rank-card">
+      <RankMedal rank={info.rank} size={104} stars={Math.min(slots, inRank + 1)} slots={slots} />
+      <div className="rank-card__body">
+        <p className="rank-card__title">{info.rank.title}</p>
+        <p className="rank-card__sub">
+          Прогноз на ЕГЭ: <b>{info.forecast_test} {scoreWord(info.forecast_test)}</b> ({info.forecast_primary} перв.){' '}
+          · <span className="rank-card__pts">{Math.round(info.pts)} PTS</span>
+        </p>
+        <div className="rank-card__bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
+          <i style={{ width: `${Math.round(progress * 100)}%` }} />
+        </div>
+        <div className="rank-card__row">
+          <span>{next ? `ещё ${left} ${primaryWord(left)} до ранга «${info.next_rank.title}»` : 'Высший ранг'}</span>
+          <span>Другие видят только ранг</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function scoreWord(n) {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return 'балл'
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'балла'
+  return 'баллов'
+}
+
+function primaryWord(n) {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return 'первичный балл'
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'первичных балла'
+  return 'первичных баллов'
 }
 
 function GearIcon() {

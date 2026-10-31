@@ -577,3 +577,36 @@ div.part__question .md { flex: 1; min-width: 0; }
 .cropper__ring { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.5); outline: 2px solid rgba(255, 255, 255, 0.7); pointer-events: none; }
 .cropper__zoom { display: flex; align-items: center; gap: 10px; width: 260px; }
 .cropper__zoom input { flex: 1; accent-color: var(--lime); }
+
+/* PTS в вердикте */
+.pts { font-family: var(--mono); font-weight: 700; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+.pts--up { color: var(--ok); background: rgba(62, 207, 142, 0.15); }
+.pts--down { color: var(--bad); background: rgba(242, 102, 122, 0.15); }
+
+/* Карточка ранга в профиле */
+.rank-card { display: flex; gap: 20px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 22px; margin-bottom: 16px; }
+.rank-card--locked { border-style: dashed; }
+.rank-card__body { flex: 1; min-width: 0; }
+.rank-card__title { font-size: 21px; font-weight: 700; margin: 0; }
+.rank-card__sub { color: var(--muted); font-size: 14px; margin: 2px 0 12px; }
+.rank-card__sub b { color: var(--text); }
+.rank-card__pts { font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); padding: 2px 8px; border-radius: 8px; white-space: nowrap; }
+.rank-card__bar { height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.rank-card__bar > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--lime), #e9ff9e); }
+.rank-card__row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-top: 8px; }
+@media (max-width: 520px) { .rank-card { flex-direction: column; text-align: center; } .rank-card__row { justify-content: center; } }
+
+/* Поздравление с рангом */
+.modal--center { place-items: center; padding: 16px; }
+.rank-up { max-width: 420px; text-align: center; padding: 28px 24px 24px; display: grid; justify-items: center; gap: 6px; }
+.rank-up__medal { animation: rank-pop 0.6s cubic-bezier(.2, 1.4, .4, 1) both; filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.5)); }
+.rank-up__kicker { margin: 8px 0 0; color: var(--lime); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+.rank-up__title { margin: 0; font-size: 26px; }
+.rank-up .btn { margin-top: 10px; min-width: 140px; }
+@keyframes rank-pop { from { transform: scale(0.3) rotate(-20deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 560px) { .modal--center .modal__sheet { min-height: 0; border-radius: 16px; border: 1px solid var(--border); } }
+@media (prefers-reduced-motion: reduce) { .rank-up__medal { animation: none; } }
+
+/* Ранг в рейтинге */
+.leaderboard__rank { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 12px; color: var(--muted); vertical-align: middle; }
+.leaderboard__rank svg { flex: none; }

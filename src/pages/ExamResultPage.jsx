@@ -63,6 +63,22 @@ export default function ExamResultPage() {
         </div>
       </div>
 
+      {exam.calibrated_now && (
+        <p className="notice">
+          Это был входной пробник: по нему определён ваш первый ранг. Карточка ранга — <Link to="/profile">в профиле</Link>.
+        </p>
+      )}
+
+      {exam.pts_delta != null && (
+        <p className="notice">
+          PTS за пробник:{' '}
+          <span className={`pts ${exam.pts_delta >= 0 ? 'pts--up' : 'pts--down'}`}>
+            {exam.pts_delta >= 0 ? '+' : '−'}{Math.abs(Math.round(exam.pts_delta))} PTS
+          </span>
+          {' '}— засчитаны задачи, которые вы встретили впервые.
+        </p>
+      )}
+
       {exam.test_score_approximate && (
         <p className="notice">
           Тестовый балл приблизительный: шкала Рособрнадзора рассчитана на полный вариант
