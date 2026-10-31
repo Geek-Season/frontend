@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { checkAnswer } from '../api.js'
+import Markdown from './Markdown.jsx'
 import TaskMedia from './TaskMedia.jsx'
 
 const SOURCE_LABELS = { demo: 'Демо', official: 'Экзамен', author: 'Авторская' }
@@ -52,7 +53,7 @@ export default function TaskCard({ task, position, onChecked }) {
         <span className="task__id">id {task.id}</span>
       </div>
 
-      <p className="task__statement">{task.statement}</p>
+      <Markdown className="task__statement" text={task.statement} />
       <TaskMedia task={task} />
 
       {hasParts ? (
@@ -61,7 +62,7 @@ export default function TaskCard({ task, position, onChecked }) {
             const r = partResult(p.number)
             return (
               <div key={p.number} className="part">
-                <p className="part__question"><span className="part__number">{p.number}</span>{p.question}</p>
+                <div className="part__question"><span className="part__number">{p.number}</span><Markdown text={p.question} /></div>
                 <div className="answer">
                   <label className="answer__label" htmlFor={`answer-${task.id}-${p.number}`}>Ответ {p.number}</label>
                   <input
@@ -82,7 +83,7 @@ export default function TaskCard({ task, position, onChecked }) {
                     </span>
                   )}
                 </div>
-                {r?.explanation && <p className="verdict__explanation">{r.explanation}</p>}
+                {r?.explanation && <Markdown className="verdict__explanation" text={r.explanation} />}
               </div>
             )
           })}
@@ -123,7 +124,7 @@ export default function TaskCard({ task, position, onChecked }) {
                 : 'Неверно.'}
           </strong>{' '}
           {!result.is_correct && !hasParts && <>Правильный ответ: <code>{result.correct_answer}</code></>}
-          {result.explanation && <p className="verdict__explanation">{result.explanation}</p>}
+          {result.explanation && <Markdown className="verdict__explanation" text={result.explanation} />}
         </div>
       )}
     </article>

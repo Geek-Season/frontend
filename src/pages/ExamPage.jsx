@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { finishExam, saveExamAnswer, startExam } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import Markdown from '../components/Markdown.jsx'
 import TaskMedia from '../components/TaskMedia.jsx'
 import { useCurrentExam, useExamHistory, useInvalidate } from '../queries.js'
 
@@ -198,16 +199,16 @@ function ExamRun({ exam }) {
             // 20 и 21 — к той же игре, что и 19: условие свёрнуто, чтобы не повторять его трижды.
             <details className="exam-task__game">
               <summary>Условие игры (из задания 19)</summary>
-              <p className="task__statement">{i.statement}</p>
+              <Markdown className="task__statement" text={i.statement} />
               <TaskMedia task={i} />
             </details>
           ) : (
             <>
-              <p className="task__statement">{i.statement}</p>
+              <Markdown className="task__statement" text={i.statement} />
               <TaskMedia task={i} />
             </>
           )}
-          {i.question && <p className="part__question"><span className="part__number">{i.exam_number}</span>{i.question}</p>}
+          {i.question && <div className="part__question"><span className="part__number">{i.exam_number}</span><Markdown text={i.question} /></div>}
           <div className="answer">
             <label className="answer__label" htmlFor={`exam-${i.position}`}>Ответ</label>
             <input
