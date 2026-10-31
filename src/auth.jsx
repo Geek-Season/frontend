@@ -88,13 +88,18 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, checking, savedUserId, login, logout }}>
+    <AuthContext.Provider value={{ user, checking, savedUserId, login, logout, updateUser: setUser }}>
       {children}
     </AuthContext.Provider>
   )
 }
 
-/** В любом компоненте: const { user, login, logout } = useAuth() */
+/** В любом компоненте: const { user, login, logout, updateUser } = useAuth() */
 export function useAuth() {
   return useContext(AuthContext)
+}
+
+/** Как ученика зовут на сайте: ник, а если его нет — имя из Telegram. */
+export function displayName(user) {
+  return user?.display_name || user?.nickname || user?.first_name || ''
 }

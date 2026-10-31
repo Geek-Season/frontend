@@ -113,9 +113,19 @@ export function loginWithCode(code) {
   return request('/auth/code', { method: 'POST', body: JSON.stringify({ code }) })
 }
 
-/** Кто я: { id, first_name, last_name, username, created_at } */
+/** Кто я: { id, display_name, nickname, first_name, last_name, username, role, created_at } */
 export function getMe() {
   return request('/auth/me')
+}
+
+/** Сменить ник (null — убрать и снова показывать имя из Telegram). Возвращает обновлённого «меня». */
+export function updateNickname(nickname) {
+  return request('/auth/me', { method: 'PATCH', body: JSON.stringify({ nickname }) })
+}
+
+/** Админ: сбросить неприличный ник ученика. */
+export function resetNickname(userId) {
+  return request(`/auth/users/${userId}/nickname`, { method: 'DELETE' })
 }
 
 // ---------- Прогресс ----------
