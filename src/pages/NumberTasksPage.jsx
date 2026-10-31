@@ -37,10 +37,11 @@ export default function NumberTasksPage() {
   const [progress, setProgress] = useState(() =>
     ['solved', 'unsolved'].includes(searchParams.get('progress')) ? searchParams.get('progress') : '',
   )
-  // Вышел из аккаунта — фильтр по прогрессу больше не применим.
-  const progressFilter = user ? progress : ''
-
   const me = useMe()
+  // Гостю фильтр по прогрессу не применим. Пока вход проверяется — уже применим:
+  // иначе после ответа /auth/me сменился бы ключ запроса и список загрузился бы ещё раз.
+  const progressFilter = me !== 'guest' ? progress : ''
+
   const invalidate = useInvalidate()
   const filters = { source, progress: progressFilter, sort }
 
@@ -121,7 +122,7 @@ export default function NumberTasksPage() {
         </select>
       </div>
 
-      {!user && (
+      {me === 'guest' && (
         <div className="notice">
           <Link to="/login">Войдите</Link>, чтобы ответы сохранялись в статистику.
         </div>
