@@ -18,7 +18,7 @@ function sinceText(iso) {
 }
 
 export default function ProfilePage() {
-  const { user, checking, logout } = useAuth()
+  const { user, checking } = useAuth()
   // Из кэша: после ответа на задачу статистика помечена устаревшей и тихо обновится в фоне.
   const statsQuery = useStats()
   const stats = statsQuery.data ?? null
@@ -41,7 +41,6 @@ export default function ProfilePage() {
           <p className="muted small">{sinceText(user.created_at)}</p>
         </div>
         <div className="profile__actions">
-          <button className="btn btn--ghost" onClick={logout}>Выйти</button>
           <button className="btn btn--ghost btn--icon" onClick={() => setSettingsOpen(true)} aria-label="Настройки профиля" title="Настройки профиля">
             <GearIcon />
           </button>
