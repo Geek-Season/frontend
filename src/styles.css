@@ -142,7 +142,9 @@ h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; }
 
 /* ---------- Вход и профиль ---------- */
 .nav { align-items: center; }
-.nav__login { background: var(--lime); color: #11140a !important; font-weight: 600; }
+/* Кнопка «Войти» всегда зелёная — и на самой странице входа: там NavLink получает .active,
+   а .nav__link.active (тёмный фон) иначе перебивал зелёный, и тёмный текст сливался с фоном. */
+.nav__login, .nav__login.active { background: var(--lime); color: #11140a !important; font-weight: 600; }
 .nav__login:hover { background: var(--lime) !important; filter: brightness(1.08); }
 .nav__user { display: flex; align-items: center; gap: 8px; }
 
