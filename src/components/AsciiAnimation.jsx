@@ -21,9 +21,9 @@ export default function AsciiAnimation({ title = '~/geek-season — ascii.sh' })
   useEffect(() => {
     if (!frames || !pre.current) return undefined
     pre.current.textContent = frames[index.current % frames.length]
-    // Кто в системе отключил анимации — видит неподвижный кадр.
-    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (paused || still) return undefined
+    // Крутится всегда, даже при «уменьшить движение» в системе (так решили: анимация — часть главной).
+    // Остановить можно кликом по окну.
+    if (paused) return undefined
     let raf
     let last = 0
     const tick = (now) => {
