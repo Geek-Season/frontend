@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
-import { displayName, useAuth } from '../auth.jsx'
-import Avatar from './Avatar.jsx'
+import { useAuth } from '../auth.jsx'
 import { RankUpHost } from './RankUp.jsx'
+import UserMenu from './UserMenu.jsx'
 
 // Общая рамка всех страниц: шапка с меню, а ниже — текущая страница (<Outlet />).
 export default function Layout() {
@@ -36,12 +36,8 @@ export default function Layout() {
             <NavLink to="/" end className={`nav__link ${onTasks ? 'active' : ''}`}>Задания</NavLink>
             <NavLink to="/exam" className="nav__link">Пробник</NavLink>
             <NavLink to="/rating" className="nav__link">Рейтинг</NavLink>
-            {user?.role === 'admin' && <NavLink to="/admin" className="nav__link nav__link--admin">Админка</NavLink>}
             {!checking && (user ? (
-              <NavLink to="/profile" className="nav__link nav__user">
-                <Avatar name={displayName(user)} url={user.avatar_url} size="small" />
-                <span className="nav__user-name">{displayName(user)}</span>
-              </NavLink>
+              <UserMenu />
             ) : (
               <NavLink to="/login" className="nav__link nav__login">Войти</NavLink>
             ))}
