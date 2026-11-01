@@ -146,15 +146,6 @@ export function resetMyAvatar() {
   return request('/auth/me/avatar', { method: 'DELETE' })
 }
 
-/** Админ: сбросить неприличную аватарку ученика. */
-export function resetAvatar(userId) {
-  return request(`/auth/users/${userId}/avatar`, { method: 'DELETE' })
-}
-
-/** Админ: сбросить неприличный ник ученика. */
-export function resetNickname(userId) {
-  return request(`/auth/users/${userId}/nickname`, { method: 'DELETE' })
-}
 
 // ---------- Админка: ученики и журнал ----------
 
@@ -247,8 +238,12 @@ export function getMyRank() {
 // ---------- Рейтинг ----------
 
 /** period: 'week' | 'all' */
-export function getRating(period) {
-  return request(`/rating?period=${period}`)
+/** Таблица лидеров по PTS: {period: all|week, number: '27', rank: 'legend'}. */
+export function getRating({ period = 'all', number, rank } = {}) {
+  const query = new URLSearchParams({ period })
+  if (number) query.set('number', number)
+  if (rank) query.set('rank', rank)
+  return request(`/rating?${query}`)
 }
 
 // ---------- Редактор задач (только админ) ----------
