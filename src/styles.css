@@ -761,8 +761,8 @@ button.nav__user.active { background: var(--surface-2); color: var(--text); }
 .usermenu__menu .usermenu__danger, .usermenu__menu .usermenu__danger svg { color: var(--bad); }
 
 /* ---------- Главная ---------- */
-.home { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: center; padding: 40px 0 24px; }
-.home__hello { font-size: 44px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; margin: 0; overflow-wrap: anywhere; }
+.home { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: center; padding: 40px 0 24px; }
+.home__hello { font-size: 40px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; margin: 0; overflow-wrap: anywhere; }
 .home__hello span { color: var(--lime); }
 .home__sub { font-size: 18px; color: var(--muted); margin: 12px 0 24px; max-width: 520px; }
 .home__facts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -778,10 +778,16 @@ button.nav__user.active { background: var(--surface-2); color: var(--text); }
 .term__bar i:nth-child(3) { background: #3ecf8e; }
 .term__bar span { margin-left: 8px; font: 12px var(--mono); color: var(--muted); }
 .term__screen { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
-.term pre { margin: 0; padding: 10px 14px 14px; font: 11px/11px var(--mono); color: var(--lime); text-shadow: 0 0 6px rgba(198, 243, 107, 0.35); text-align: left; }
-@media (max-width: 760px) {
+/* 88×42 символа. Размер шрифта подстраивается под ширину экрана (в моноширинном шрифте символ ≈ 0,6 кегля),
+   min-height держит место, пока кадры грузятся, — страница не прыгает. */
+.term pre {
+  --size: min(10px, calc((100vw - 64px) / 88 / 0.6));
+  margin: 0; padding: 10px 14px 14px; font-family: var(--mono); font-size: var(--size); line-height: var(--size);
+  min-height: calc(var(--size) * 42 + 24px); min-width: calc(var(--size) * 0.6 * 88 + 28px);
+  color: var(--lime); text-shadow: 0 0 6px rgba(198, 243, 107, 0.35); text-align: left;
+}
+@media (max-width: 900px) {
   .home { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 20px; }
   .home__hello { font-size: 32px; }
   .term { justify-self: center; max-width: 100%; }
-  .term pre { font-size: 8px; line-height: 8px; }
 }
