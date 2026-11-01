@@ -37,6 +37,7 @@ export const keys = {
   rank: (me) => ['rank', me],
   achievements: (me) => ['achievements', me],
   rating: (me, params) => ['rating', me, params],
+  studentCard: (me, id) => ['rating', me, 'card', String(id)],
   examCurrent: (me) => ['exam', me, 'current'],
   examHistory: (me) => ['exam', me, 'history'],
   exam: (me, id) => ['exam', me, 'one', String(id)],
@@ -121,6 +122,17 @@ export function useRating(params) {
     staleTime: 30 * 1000,
     placeholderData: (previous) => previous, // переключение фильтра — без мигания «Загрузка…»
     enabled: me !== null,
+  })
+}
+
+/** Карточка ученика (ключ внутри ['rating', me] — обновляется вместе с рейтингом после ответа). */
+export function useStudentCard(id) {
+  const me = useMe()
+  return useQuery({
+    queryKey: keys.studentCard(me, id),
+    queryFn: () => api.getStudentCard(id),
+    staleTime: 30 * 1000,
+    enabled: id != null && me !== null,
   })
 }
 

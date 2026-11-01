@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { displayName, useAuth } from '../auth.jsx'
-import ActivityChart from '../components/ActivityChart.jsx'
+import ActivityCalendar from '../components/ActivityCalendar.jsx'
 import Avatar from '../components/Avatar.jsx'
 import ProfileSettings from '../components/ProfileSettings.jsx'
 import RankMedal from '../components/RankMedal.jsx'
+import StudentCard from '../components/StudentCard.jsx'
 import { useAchievements, useMyRank, useStats } from '../queries.js'
 
 // «Занимаюсь с января 2026»: месяц в родительном падеже.
@@ -26,6 +27,7 @@ export default function ProfilePage() {
   // Достижения выдаёт фоновый воркер через RabbitMQ — обычно за секунду после ответа.
   const achievements = useAchievements().data ?? []
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [cardOpen, setCardOpen] = useState(false)
 
   if (checking) return <p className="muted">Загрузка…</p>
   if (!user) return <Navigate to="/login" replace />
@@ -41,7 +43,8 @@ export default function ProfilePage() {
           <p className="muted small">{sinceText(user.created_at)}</p>
         </div>
         <div className="profile__actions">
-          {user.role === 'admin' && <Link to="/admin" className="btn btn--ghost">Редактор задач</Link>}
+          {user.role === 'admin' && <Link to="/admin" className="btn btn--ghost">Админка</Link>}
+          <button className="btn btn--ghost" onClick={() => setCardOpen(true)}>👁 Как меня видят</button>
           <button className="btn btn--ghost" onClick={logout}>Выйти</button>
           <button className="btn btn--ghost btn--icon" onClick={() => setSettingsOpen(true)} aria-label="Настройки профиля" title="Настройки профиля">
             <GearIcon />
@@ -50,6 +53,7 @@ export default function ProfilePage() {
       </div>
 
       {settingsOpen && <ProfileSettings onClose={() => setSettingsOpen(false)} />}
+      {cardOpen && <StudentCard id={user.id} self onClose={() => setCardOpen(false)} />}
 
       <RankCard />
 
@@ -116,8 +120,8 @@ function Stats({ stats }) {
       )}
 
       <div className="panel">
-        <h2 className="panel__title">Ответы за 14 дней</h2>
-        <ActivityChart days={stats.activity} />
+        <h2 className="panel__title">Активность</h2>
+        <ActivityCalendar calendar={stats.calendar} />
       </div>
 
       <div className="panel">
