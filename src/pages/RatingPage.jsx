@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import RankMedal from '../components/RankMedal.jsx'
+import StudentCard from '../components/StudentCard.jsx'
 import { useNumbers, useRating } from '../queries.js'
 
 const BOARDS = [
@@ -41,16 +42,23 @@ function RankTag({ row }) {
   )
 }
 
-function Row({ row, right, isAdmin }) {
+function Row({ row, right, isAdmin, onOpen }) {
   return (
-    <li className={`lb__row ${row.is_me ? 'is-me' : ''}`}>
+    <li
+      className={`lb__row lb__row--link ${row.is_me ? 'is-me' : ''}`}
+      tabIndex={0}
+      role="button"
+      aria-label={`Карточка ученика ${row.name}`}
+      onClick={() => onOpen(row.user_id)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(row.user_id) } }}
+    >
       <span className={`lb__place place-${row.place}`}>{row.place}</span>
       <Avatar name={row.name} url={row.avatar_url} size="small" />
       <span className="lb__name">
         {row.name}
         {row.is_me && <span className="badge badge--me">вы</span>}
         {isAdmin && (
-          <Link className="lb__admin" to={`/admin?tab=users&user=${row.user_id}`} title="Открыть в админке" aria-label="Открыть в админке">⚙</Link>
+          <Link className="lb__admin" to={`/admin?tab=users&user=${row.user_id}`} onClick={(e) => e.stopPropagation()} title="Открыть в админке" aria-label="Открыть в админке">⚙</Link>
         )}
       </span>
       <RankTag row={row} />
@@ -72,6 +80,15 @@ export default function RatingPage() {
   const rating = query.data ?? null
   const isAdmin = user?.role === 'admin'
   const me = rating?.me
+
+  // Открытая карточка — в адресе (?user=12): ссылкой можно поделиться, «Назад» закрывает её.
+  const cardId = params.get('user')
+  function openCard(id) {
+    const next = new URLSearchParams(params)
+    if (id == null) next.delete('user')
+    else next.set('user', String(id))
+    setParams(next, { replace: id == null })
+  }
 
   function update(changes) {
     const next = { board, number: board === 'number' ? number : null, rank, ...changes }
@@ -141,11 +158,11 @@ export default function RatingPage() {
             <div className="empty">{empty}</div>
           ) : (
             <ol className={`lb ${query.isPlaceholderData ? 'is-loading' : ''}`} aria-busy={query.isPlaceholderData}>
-              {rating.top.map((r) => <Row key={r.user_id} row={r} right={right(r)} isAdmin={isAdmin} />)}
+              {rating.top.map((r) => <Row key={r.user_id} row={r} right={right(r)} isAdmin={isAdmin} onOpen={openCard} />)}
               {me?.row && (
                 <>
                   <li className="lb__gap" aria-hidden="true">⋯</li>
-                  <Row row={me.row} right={right(me.row)} isAdmin={isAdmin} />
+                  <Row row={me.row} right={right(me.row)} isAdmin={isAdmin} onOpen={openCard} />
                 </>
               )}
             </ol>
@@ -169,6 +186,7 @@ export default function RatingPage() {
           </p>
         </>
       )}
+      {cardId && <StudentCard id={Number(cardId)} self={Number(cardId) === user?.id} onClose={() => openCard(null)} />}
     </section>
   )
 }

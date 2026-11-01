@@ -238,6 +238,11 @@ export function getMyRank() {
 // ---------- Рейтинг ----------
 
 /** period: 'week' | 'all' */
+/** Публичная карточка ученика: ранг, место, решено, серия, достижения, календарь активности. */
+export function getStudentCard(id) {
+  return request(`/rating/users/${id}`)
+}
+
 /** Таблица лидеров по PTS: {period: all|week, number: '27', rank: 'legend'}. */
 export function getRating({ period = 'all', number, rank } = {}) {
   const query = new URLSearchParams({ period })

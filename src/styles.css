@@ -209,22 +209,6 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
 .panel__title { font-size: 15px; margin: 0 0 14px; }
 
 /* график: один ряд, один цвет; ось и сетка — приглушённые */
-.activity__tooltip { min-height: 22px; font-size: 13px; margin-bottom: 10px; color: var(--text); }
-.activity__plot {
-  position: relative; display: grid; grid-template-columns: repeat(14, 1fr); gap: 2px;
-  height: 140px; padding-left: 24px; border-bottom: 1px solid var(--border);
-}
-.activity__max { position: absolute; left: 0; top: 0; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.activity__plot::before { content: ''; position: absolute; left: 24px; right: 0; top: 0; border-top: 1px dashed var(--border); }
-.activity__col {
-  position: relative; display: flex; align-items: flex-end; justify-content: center; height: 100%;
-  background: none; border: 0; padding: 0 2px; cursor: pointer; border-radius: 4px 4px 0 0;
-}
-.activity__col:hover, .activity__col.is-active, .activity__col:focus-visible { background: var(--surface-2); outline: none; }
-.activity__bar { display: block; width: 100%; max-width: 22px; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 0; }
-.activity__bar.is-empty { height: 2px !important; background: var(--border); }
-.activity__label { position: absolute; bottom: -20px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.activity { padding-bottom: 22px; }
 
 .number-progress { display: grid; gap: 4px; }
 .number-progress__row {
@@ -705,3 +689,59 @@ div.part__question .md { flex: 1; min-width: 0; }
   .lb__locked { flex-wrap: wrap; }
 }
 .lb.is-loading { opacity: 0.55; transition: opacity 0.15s; }
+
+/* ---------- Календарь активности (как в LeetCode/GitHub) ---------- */
+.heat__head { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.heat__scroll { overflow-x: auto; padding-bottom: 4px; }
+.heat__grid { display: flex; gap: 3px; width: max-content; }
+.heat__days, .heat__week { display: grid; grid-template-rows: 16px repeat(7, 12px); gap: 3px; }
+.heat__days { font-size: 10px; color: var(--muted); margin-right: 4px; }
+.heat__days span { line-height: 12px; }
+.heat__month { font-size: 10px; color: var(--muted); white-space: nowrap; width: 12px; overflow: visible; }
+.heat__cell { display: inline-block; width: 12px; height: 12px; padding: 0; border: 0; border-radius: 3px; background: var(--surface-2); cursor: pointer; }
+.heat__cell.is-empty { background: transparent; cursor: default; }
+.heat__cell.l1 { background: rgba(198, 243, 107, 0.25); }
+.heat__cell.l2 { background: rgba(198, 243, 107, 0.45); }
+.heat__cell.l3 { background: rgba(198, 243, 107, 0.7); }
+.heat__cell.l4 { background: var(--lime); }
+.heat__cell:hover, .heat__cell.is-active, .heat__cell:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+.heat__foot { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-top: 10px; min-height: 20px; }
+.heat__legend { display: inline-flex; align-items: center; gap: 3px; }
+.heat__legend .heat__cell { width: 11px; height: 11px; cursor: default; }
+.heat__legend .heat__cell:hover { outline: none; }
+.heat--compact .heat__grid { gap: 2px; }
+.heat--compact .heat__days, .heat--compact .heat__week { grid-template-rows: 16px repeat(7, 10px); gap: 2px; }
+.heat--compact .heat__days span { line-height: 10px; }
+.heat--compact .heat__week .heat__cell { width: 10px; height: 10px; border-radius: 2px; }
+.heat--compact .heat__month { width: 10px; }
+
+/* ---------- Карточка ученика ---------- */
+.lb__row--link { cursor: pointer; }
+.lb__row--link:hover, .lb__row--link:focus-visible { background: var(--surface-2); outline: none; }
+.lb__row--link.is-me:hover { background: rgba(139, 124, 246, 0.18); }
+.pcard__top { display: flex; align-items: center; gap: 16px; padding: 14px 0 6px; }
+.pcard__avatar { width: 64px; height: 64px; font-size: 28px; }
+.pcard__who { flex: 1; min-width: 0; }
+.pcard__name { font-size: 22px; font-weight: 700; overflow-wrap: anywhere; }
+.pcard__rank { text-align: center; min-width: 140px; }
+.pcard__rank-title { font-weight: 600; margin-top: 2px; }
+.pcard__tiles { margin: 14px 0 10px; }
+.pcard__tiles .tile { padding: 12px 14px; }
+.pcard__tiles .tile__value { font-size: 22px; }
+.pcard__ach { display: flex; flex-wrap: wrap; gap: 6px; }
+.pcard__badge { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; padding: 4px 10px 4px 6px; border-radius: 999px; background: rgba(198, 243, 107, 0.06); border: 1px solid rgba(198, 243, 107, 0.3); }
+.pcard__badge span { font-size: 16px; }
+.pcard__foot { justify-content: space-between; align-items: center; }
+@media (max-width: 560px) {
+  .pcard__top { flex-wrap: wrap; }
+  .pcard__rank { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; min-width: 0; }
+  .pcard__rank svg { width: 56px; height: 56px; }
+  .pcard__tiles { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .pcard__tiles .tile { padding: 10px; }
+  .pcard__tiles .tile__value { font-size: 18px; }
+  .pcard__tiles .tile__hint { display: none; }
+}
+/* Широкое содержимое (календарь) прокручивается внутри окна, а не растягивает его. */
+.modal { grid-template-columns: minmax(0, 760px); }
+.modal__sheet, .modal__body, .heat { min-width: 0; }
+@media (max-width: 560px) { .modal { grid-template-columns: minmax(0, 1fr); } }
