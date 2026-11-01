@@ -6,7 +6,6 @@ import ActivityCalendar from '../components/ActivityCalendar.jsx'
 import Avatar from '../components/Avatar.jsx'
 import ProfileSettings from '../components/ProfileSettings.jsx'
 import RankMedal from '../components/RankMedal.jsx'
-import StudentCard from '../components/StudentCard.jsx'
 import { useAchievements, useMyRank, useStats } from '../queries.js'
 
 // «Занимаюсь с января 2026»: месяц в родительном падеже.
@@ -27,7 +26,6 @@ export default function ProfilePage() {
   // Достижения выдаёт фоновый воркер через RabbitMQ — обычно за секунду после ответа.
   const achievements = useAchievements().data ?? []
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [cardOpen, setCardOpen] = useState(false)
 
   if (checking) return <p className="muted">Загрузка…</p>
   if (!user) return <Navigate to="/login" replace />
@@ -43,8 +41,6 @@ export default function ProfilePage() {
           <p className="muted small">{sinceText(user.created_at)}</p>
         </div>
         <div className="profile__actions">
-          {user.role === 'admin' && <Link to="/admin" className="btn btn--ghost">Админка</Link>}
-          <button className="btn btn--ghost" onClick={() => setCardOpen(true)}>👁 Как меня видят</button>
           <button className="btn btn--ghost" onClick={logout}>Выйти</button>
           <button className="btn btn--ghost btn--icon" onClick={() => setSettingsOpen(true)} aria-label="Настройки профиля" title="Настройки профиля">
             <GearIcon />
@@ -53,7 +49,6 @@ export default function ProfilePage() {
       </div>
 
       {settingsOpen && <ProfileSettings onClose={() => setSettingsOpen(false)} />}
-      {cardOpen && <StudentCard id={user.id} self onClose={() => setCardOpen(false)} />}
 
       <RankCard />
 
@@ -69,29 +64,15 @@ export default function ProfilePage() {
 function EmptyStats() {
   return (
     <div className="placeholder">
-      <p>Вы ещё не решали задачи. Здесь появится статистика: решённые задачи, точность и прогресс по номерам.</p>
+      <p>Вы ещё не решали задачи. Здесь появятся календарь занятий, номера, которые стоит повторить, и последние ответы.</p>
       <Link to="/" className="btn">Решать задания</Link>
     </div>
   )
 }
 
 function Stats({ stats }) {
-  const accuracy = stats.accuracy === null ? '—' : `${Math.round(stats.accuracy * 100)}%`
-  const started = stats.by_number.filter((n) => n.tasks_count > 0)
-
   return (
     <>
-      <div className="tiles">
-        <Tile label="Решено задач" value={stats.solved_tasks} hint={`из ${stats.total_tasks} в банке`} />
-        <Tile
-          label="Точность"
-          value={accuracy}
-          hint={`${stats.correct_attempts} верных из ${stats.total_attempts}`}
-        />
-        <Tile label="Серия" value={dayWord(stats.streak_days)} hint="подряд без пропусков" />
-        <Tile label="Всего ответов" value={stats.total_attempts} hint={`за ${dayWord(stats.active_days)}`} />
-      </div>
-
       {stats.weak_numbers.length > 0 && (
         <div className="panel panel--weak">
           <h2 className="panel__title">Что повторить</h2>
@@ -122,22 +103,6 @@ function Stats({ stats }) {
       <div className="panel">
         <h2 className="panel__title">Активность</h2>
         <ActivityCalendar calendar={stats.calendar} />
-      </div>
-
-      <div className="panel">
-        <h2 className="panel__title">Прогресс по номерам</h2>
-        <div className="number-progress">
-          {started.map((n) => (
-            <Link key={n.code} to={`/tasks/${n.code}`} className="number-progress__row">
-              <span className="number-progress__code">{n.code}</span>
-              <span className="number-progress__title">{n.title}</span>
-              <span className="progress progress--wide">
-                <span style={{ width: `${(n.solved / n.tasks_count) * 100}%` }} />
-              </span>
-              <span className="number-progress__value">{n.solved} / {n.tasks_count}</span>
-            </Link>
-          ))}
-        </div>
       </div>
 
       <div className="panel">
@@ -186,28 +151,6 @@ function Achievements({ items }) {
       </ul>
     </div>
   )
-}
-
-function Tile({ label, value, hint }) {
-  return (
-    <div className="tile">
-      <span className="tile__label">{label}</span>
-      <span className="tile__value">{value}</span>
-      <span className="tile__hint">{hint}</span>
-    </div>
-  )
-}
-
-function plural(n, one, few, many) {
-  const mod10 = n % 10
-  const mod100 = n % 100
-  if (mod10 === 1 && mod100 !== 11) return one
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
-  return many
-}
-
-function dayWord(n) {
-  return `${n} ${plural(n, 'день', 'дня', 'дней')}`
 }
 
 function timeAgo(iso) {

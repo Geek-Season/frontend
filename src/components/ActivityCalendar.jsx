@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 // Календарь активности за год, как в LeetCode и GitHub: столбик — неделя (пн…вс), квадратик — день,
 // чем ярче — тем больше ответов. calendar — из API: {start, end, days: [{date, attempts, correct}], total, …}.
-// compact — квадратики помельче (в карточке ученика).
+// compact — квадратики помельче (в карточке ученика); showStreak — текущая серия в шапке
+// (в карточке она отдельной плиткой).
 
 const MONTHS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
 
@@ -40,7 +41,7 @@ function describe(date, day) {
   return `${dayTitle(date)}: ${day.attempts} ${plural(day.attempts, 'ответ', 'ответа', 'ответов')}, верных ${day.correct}`
 }
 
-export default function ActivityCalendar({ calendar, compact = false }) {
+export default function ActivityCalendar({ calendar, compact = false, showStreak = true }) {
   const [active, setActive] = useState(null) // {date, day}
   const scroller = useRef(null)
 
@@ -73,8 +74,9 @@ export default function ActivityCalendar({ calendar, compact = false }) {
       <div className="heat__head">
         <span><b>{calendar.total} {plural(calendar.total, 'ответ', 'ответа', 'ответов')}</b> за год</span>
         <span className="muted small">
-          дней с занятиями: {calendar.active_days} · лучшая серия: {calendar.best_streak}{' '}
-          {plural(calendar.best_streak, 'день', 'дня', 'дней')}
+          дней с занятиями: {calendar.active_days}
+          {showStreak && ` · серия: ${calendar.streak} ${plural(calendar.streak, 'день', 'дня', 'дней')}`}
+          {' · '}лучшая серия: {calendar.best_streak} {plural(calendar.best_streak, 'день', 'дня', 'дней')}
         </span>
       </div>
       <div className="heat__scroll" ref={scroller}>

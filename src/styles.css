@@ -210,22 +210,7 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
 .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
 .panel__title { font-size: 15px; margin: 0 0 14px; }
 
-/* график: один ряд, один цвет; ось и сетка — приглушённые */
-
-.number-progress { display: grid; gap: 4px; }
-.number-progress__row {
-  display: grid; grid-template-columns: 48px 1fr 1.2fr 56px; align-items: center; gap: 12px;
-  padding: 6px 8px; border-radius: 8px; font-size: 14px;
-}
-.number-progress__row:hover { background: var(--surface-2); }
 .number-progress__code { font-family: var(--mono); font-weight: 700; color: var(--accent-strong); }
-.number-progress__title { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.number-progress__value { text-align: right; font-variant-numeric: tabular-nums; }
-.progress--wide { margin: 0; height: 6px; border-radius: 3px; }
-@media (max-width: 520px) {
-  .number-progress__row { grid-template-columns: 44px 1fr 48px; }
-  .number-progress__title { display: none; }
-}
 
 .recent { list-style: none; margin: 0; padding: 0; }
 .recent__row { display: grid; grid-template-columns: 96px 1fr auto auto; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
