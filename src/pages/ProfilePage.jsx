@@ -41,7 +41,6 @@ export default function ProfilePage() {
           <p className="muted small">{sinceText(user.created_at)}</p>
         </div>
         <div className="profile__actions">
-          {user.role === 'admin' && <Link to="/admin" className="btn btn--ghost">Админка</Link>}
           <button className="btn btn--ghost" onClick={logout}>Выйти</button>
           <button className="btn btn--ghost btn--icon" onClick={() => setSettingsOpen(true)} aria-label="Настройки профиля" title="Настройки профиля">
             <GearIcon />
