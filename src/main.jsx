@@ -1,12 +1,13 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import React, { lazy, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 import { AuthProvider } from './auth.jsx'
 import Layout from './components/Layout.jsx'
 import ExamPage from './pages/ExamPage.jsx'
 import ExamResultPage from './pages/ExamResultPage.jsx'
+import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import NumbersPage from './pages/NumbersPage.jsx'
 import NumberTasksPage from './pages/NumberTasksPage.jsx'
@@ -21,7 +22,8 @@ import './styles.css'
 const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
 
 // Адреса страниц сайта:
-//   /               — сетка номеров ЕГЭ (старый адрес /tasks ведёт сюда же)
+//   /               — главная: приветствие, счётчик до ЕГЭ, анимация; гостю — о сайте и вход
+//   /tasks          — сетка номеров ЕГЭ
 //   /tasks/17       — прототипы номера 17
 //   /login          — вход через Telegram
 //   /profile        — профиль (только для вошедших)
@@ -38,8 +40,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route element={<Layout />}>
             {/* «Задания» — прямо на главной: по адресу сайта GitHub Pages отдаёт настоящий
                 index.html со статусом 200, и F5 на главной не даёт 404. */}
-            <Route index element={<NumbersPage />} />
-            <Route path="/tasks" element={<Navigate to="/" replace />} />
+            <Route index element={<HomePage />} />
+            <Route path="/tasks" element={<NumbersPage />} />
             <Route path="/tasks/:code" element={<NumberTasksPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/profile" element={<ProfilePage />} />

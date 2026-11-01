@@ -38,6 +38,7 @@ export const keys = {
   achievements: (me) => ['achievements', me],
   rating: (me, params) => ['rating', me, params],
   studentCard: (me, id) => ['rating', me, 'card', String(id)],
+  site: () => ['site'],
   examCurrent: (me) => ['exam', me, 'current'],
   examHistory: (me) => ['exam', me, 'history'],
   exam: (me, id) => ['exam', me, 'one', String(id)],
@@ -134,6 +135,11 @@ export function useStudentCard(id) {
     staleTime: 30 * 1000,
     enabled: id != null && me !== null,
   })
+}
+
+/** Настройки сайта (одинаковые для всех): дата ЕГЭ. Меняются редко — кэш на 10 минут. */
+export function useSite() {
+  return useQuery({ queryKey: keys.site(), queryFn: api.getSite, staleTime: 10 * 60 * 1000 })
 }
 
 // ---------- Пробник ----------
@@ -294,6 +300,12 @@ export function useInvalidate() {
           queryClient.invalidateQueries({ queryKey: key })
         }
       }
+    },
+
+    /** Админ изменил настройки сайта (дату ЕГЭ). */
+    siteChanged() {
+      queryClient.invalidateQueries({ queryKey: keys.site() })
+      queryClient.invalidateQueries({ queryKey: keys.adminActions(me) })
     },
 
     /** Админ изменил банк задач: списки номеров и задач у всех страниц устарели. */

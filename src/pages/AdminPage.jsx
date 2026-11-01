@@ -16,6 +16,7 @@ import MarkdownEditor, { replaceImageSources } from '../components/MarkdownEdito
 import { fileIcon, formatSize } from '../components/TaskMedia.jsx'
 import { useAdminTasks, useInvalidate, useNumbers } from '../queries.js'
 import JournalTab from './admin/JournalTab.jsx'
+import SiteTab from './admin/SiteTab.jsx'
 import UsersTab from './admin/UsersTab.jsx'
 
 const EMPTY = {
@@ -65,6 +66,7 @@ const TABS = [
   { key: 'tasks', title: 'Задачи' },
   { key: 'users', title: 'Ученики' },
   { key: 'log', title: 'Журнал' },
+  { key: 'site', title: 'Сайт' },
 ]
 
 // /admin — админка: редактор банка задач, ученики, журнал действий админов.
@@ -107,6 +109,7 @@ export default function AdminPage() {
       {tab === 'tasks' && <TasksTab />}
       {tab === 'users' && <UsersTab />}
       {tab === 'log' && <JournalTab />}
+      {tab === 'site' && <SiteTab />}
     </section>
   )
 }

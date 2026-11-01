@@ -53,7 +53,7 @@ function EmptyStats() {
   return (
     <div className="placeholder">
       <p>Вы ещё не решали задачи. Здесь появятся календарь занятий, номера, которые стоит повторить, и последние ответы.</p>
-      <Link to="/" className="btn">Решать задания</Link>
+      <Link to="/tasks" className="btn">Решать задания</Link>
     </div>
   )
 }

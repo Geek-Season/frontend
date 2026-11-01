@@ -8,9 +8,9 @@ import UserMenu from './UserMenu.jsx'
 // Общая рамка всех страниц: шапка с меню, а ниже — текущая страница (<Outlet />).
 export default function Layout() {
   const { user, checking } = useAuth()
-  // «Задания» подсвечены и на главной, и на странице номера (/tasks/17).
+  // «Задания» подсвечены и в сетке номеров (/tasks), и на странице номера (/tasks/17).
   const { pathname } = useLocation()
-  const onTasks = pathname === '/' || pathname.startsWith('/tasks')
+  const onTasks = pathname.startsWith('/tasks')
 
   // На GitHub Pages адрес страницы со слэшем на конце (/frontend/rating/) отдаётся из
   // rating/index.html со статусом 200 (копии кладёт scripts/pages-routes.mjs), а без
@@ -33,7 +33,7 @@ export default function Layout() {
             Geek<span>Season</span>
           </NavLink>
           <nav className="nav">
-            <NavLink to="/" end className={`nav__link ${onTasks ? 'active' : ''}`}>Задания</NavLink>
+            <NavLink to="/tasks" className={`nav__link ${onTasks ? 'active' : ''}`}>Задания</NavLink>
             <NavLink to="/exam" className="nav__link">Пробник</NavLink>
             <NavLink to="/rating" className="nav__link">Рейтинг</NavLink>
             {!checking && (user ? (
