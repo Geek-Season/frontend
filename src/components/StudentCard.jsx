@@ -93,7 +93,7 @@ export default function StudentCard({ id, self = false, onClose }) {
               )}
 
               <h3 className="admin-card__section">Активность</h3>
-              <ActivityCalendar calendar={card.calendar} compact />
+              <ActivityCalendar calendar={card.calendar} compact showStreak={false} />
             </>
           )}
         </div>
