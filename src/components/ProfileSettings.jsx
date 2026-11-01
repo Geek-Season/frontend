@@ -1,8 +1,9 @@
-// Окно «Настройки профиля» (шестерёнка в профиле): аватарка, имя на сайте, пол.
+// Окно «Настройки профиля» (меню под аватаркой → «Настройки»): аватарка, имя на сайте, пол.
 // Изменения применяются кнопкой «Сохранить»; «Отмена», Esc или клик мимо окна — ничего не меняют.
 
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { getMe, resetMyAvatar, updateProfile, uploadAvatar } from '../api.js'
 import { useAuth } from '../auth.jsx'
@@ -100,7 +101,9 @@ export default function ProfileSettings({ onClose }) {
     }
   }
 
-  return (
+  // В document.body: шапка с backdrop-filter стала бы «рамкой» для position: fixed, и окно,
+  // открытое из меню под аватаркой, оказалось бы зажато внутри шапки.
+  return createPortal(
     <div className="modal" onMouseDown={(e) => { if (e.target === e.currentTarget && !saving) onClose() }}>
       <div className="modal__sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <div className="modal__head">
@@ -198,6 +201,7 @@ export default function ProfileSettings({ onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

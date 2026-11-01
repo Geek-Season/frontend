@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { displayName, useAuth } from '../auth.jsx'
 import ActivityCalendar from '../components/ActivityCalendar.jsx'
 import Avatar from '../components/Avatar.jsx'
-import ProfileSettings from '../components/ProfileSettings.jsx'
 import RankMedal from '../components/RankMedal.jsx'
 import { useAchievements, useMyRank, useStats } from '../queries.js'
 
@@ -25,11 +23,9 @@ export default function ProfilePage() {
   const error = stats ? null : statsQuery.error?.message
   // Достижения выдаёт фоновый воркер через RabbitMQ — обычно за секунду после ответа.
   const achievements = useAchievements().data ?? []
-  const [settingsOpen, setSettingsOpen] = useState(false)
 
   if (checking) return <p className="muted">Загрузка…</p>
   if (!user) return <Navigate to="/login" replace />
-
 
   return (
     <section>
@@ -40,14 +36,7 @@ export default function ProfilePage() {
           {user.username && <p className="muted">@{user.username}</p>}
           <p className="muted small">{sinceText(user.created_at)}</p>
         </div>
-        <div className="profile__actions">
-          <button className="btn btn--ghost btn--icon" onClick={() => setSettingsOpen(true)} aria-label="Настройки профиля" title="Настройки профиля">
-            <GearIcon />
-          </button>
-        </div>
       </div>
-
-      {settingsOpen && <ProfileSettings onClose={() => setSettingsOpen(false)} />}
 
       <RankCard />
 
@@ -231,11 +220,3 @@ function primaryWord(n) {
   return 'первичных баллов'
 }
 
-function GearIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-    </svg>
-  )
-}
