@@ -36,7 +36,7 @@ export const keys = {
   stats: (me) => ['stats', me],
   rank: (me) => ['rank', me],
   achievements: (me) => ['achievements', me],
-  rating: (me, period) => ['rating', me, period],
+  rating: (me, params) => ['rating', me, params],
   examCurrent: (me) => ['exam', me, 'current'],
   examHistory: (me) => ['exam', me, 'history'],
   exam: (me, id) => ['exam', me, 'one', String(id)],
@@ -112,10 +112,15 @@ export function useAchievements() {
   })
 }
 
-export function useRating(period) {
+/** params: {period: 'all' | 'week', number, rank}. Каждая таблица кэшируется отдельно. */
+export function useRating(params) {
   const me = useMe()
   return useQuery({
-    queryKey: keys.rating(me, period), queryFn: () => api.getRating(period), staleTime: 30 * 1000, enabled: me !== null,
+    queryKey: keys.rating(me, params),
+    queryFn: () => api.getRating(params),
+    staleTime: 30 * 1000,
+    placeholderData: (previous) => previous, // переключение фильтра — без мигания «Загрузка…»
+    enabled: me !== null,
   })
 }
 

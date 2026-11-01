@@ -154,7 +154,6 @@ h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; }
 .avatar--small { width: 24px; height: 24px; font-size: 12px; }
 .avatar--large { width: 80px; height: 80px; font-size: 32px; }
 .avatar--photo { object-fit: cover; background: var(--surface-2); }
-.leaderboard .avatar--small { width: 28px; height: 28px; }
 
 .login h1 { margin-bottom: 4px; }
 .login__grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin-top: 24px; align-items: start; }
@@ -330,17 +329,6 @@ code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px;
 }
 
 /* ---------- Рейтинг ---------- */
-.leaderboard { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.leaderboard__row { display: grid; grid-template-columns: 40px 24px 1fr auto; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-.leaderboard__row:last-child { border-bottom: 0; }
-.leaderboard__row.is-me { background: rgba(139, 124, 246, 0.12); }
-.leaderboard__place { font-family: var(--mono); font-weight: 700; color: var(--muted); text-align: center; }
-.leaderboard__place.place-1 { color: #f5c542; }
-.leaderboard__place.place-2 { color: #c9d1e0; }
-.leaderboard__place.place-3 { color: #d9935b; }
-.leaderboard__name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.leaderboard__points { font-family: var(--mono); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
-.leaderboard__footer { margin-top: 12px; }
 .badge--me { background: var(--accent); color: #fff; font-size: 11px; }
 
 @media (max-width: 520px) {
@@ -526,12 +514,6 @@ div.part__question .md { flex: 1; min-width: 0; }
 .mde__cheatsheet code { font-family: var(--mono); font-size: 12px; white-space: pre-wrap; }
 .admin-part .mde { margin-bottom: 10px; }
 
-.leaderboard__reset {
-  margin-left: 8px; padding: 1px 8px; border-radius: 6px; border: 1px solid var(--border);
-  background: none; color: var(--muted); font-size: 12px; cursor: pointer;
-}
-.leaderboard__reset:hover { color: var(--bad); border-color: var(--bad); }
-
 /* Шестерёнка в профиле */
 .btn--icon { padding: 0; width: 42px; display: inline-grid; place-items: center; }
 
@@ -608,8 +590,6 @@ div.part__question .md { flex: 1; min-width: 0; }
 @media (prefers-reduced-motion: reduce) { .rank-up__medal { animation: none; } }
 
 /* Ранг в рейтинге */
-.leaderboard__rank { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 12px; color: var(--muted); vertical-align: middle; }
-.leaderboard__rank svg { flex: none; }
 
 /* ---------- Админка: вкладки, ученики, карточка, журнал ---------- */
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px; overflow-x: auto; }
@@ -681,3 +661,47 @@ div.part__question .md { flex: 1; min-width: 0; }
 .journal__row:first-child { border-top: 0; }
 .journal__time { font-family: var(--mono); font-size: 13px; }
 @media (max-width: 560px) { .journal__row { grid-template-columns: 1fr; gap: 2px; } }
+
+/* ---------- Таблица лидеров по PTS ---------- */
+.lb__toolbar { align-items: center; }
+.lb { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.lb__row { display: grid; grid-template-columns: 36px 28px minmax(0, 1fr) 190px 130px; align-items: center; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--border); }
+.lb__row:last-child { border-bottom: 0; }
+.lb__row.is-me { background: rgba(139, 124, 246, 0.12); }
+.lb .avatar--small { width: 28px; height: 28px; font-size: 13px; }
+.lb__place { font-family: var(--mono); font-weight: 700; color: var(--muted); text-align: center; }
+.lb__place.place-1 { color: #f5c542; }
+.lb__place.place-2 { color: #c9d1e0; }
+.lb__place.place-3 { color: #d9935b; }
+.lb__name { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.lb__admin { color: var(--muted); font-size: 15px; line-height: 1; padding: 2px 4px; border-radius: 6px; }
+.lb__admin:hover { color: var(--text); background: var(--surface-2); }
+.lb__rank { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font-size: 14px; }
+.lb__rank svg { flex: none; }
+.lb__imm { color: #f5c542; font-family: var(--mono); font-weight: 700; }
+.lb__right { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.lb__mine { color: var(--accent-strong); font-weight: 700; }
+.lb__growth { color: var(--ok); font-weight: 700; }
+.lb__gap { text-align: center; color: var(--muted); padding: 2px; border-bottom: 1px solid var(--border); letter-spacing: 4px; }
+.lb__chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
+.lb__chip { display: inline-flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 4px 12px 4px 8px; font: inherit; font-size: 13px; cursor: pointer; }
+.lb__chip:hover { color: var(--text); }
+.lb__chip span { font-family: var(--mono); opacity: 0.7; }
+.lb__chip.active { color: var(--text); border-color: var(--lime); background: rgba(198, 243, 107, 0.08); }
+.lb__footer { margin-top: 12px; }
+.lb__locked { display: flex; gap: 16px; align-items: center; padding: 16px 18px; margin-top: 14px; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
+.lb__locked > div { flex: 1; }
+.lb__locked p { margin: 4px 0 0; }
+.lb__locked .btn { display: inline-block; }
+@media (max-width: 640px) {
+  .lb__row { grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-areas: "p n r" "p k r"; row-gap: 2px; padding: 10px 12px; }
+  .lb__row .avatar { display: none; }
+  .lb__place { grid-area: p; }
+  .lb__name { grid-area: n; }
+  .lb__rank { grid-area: k; font-size: 13px; color: var(--muted); }
+  .lb__right { grid-area: r; }
+  .lb__chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .lb__chip { flex: none; }
+  .lb__locked { flex-wrap: wrap; }
+}
+.lb.is-loading { opacity: 0.55; transition: opacity 0.15s; }

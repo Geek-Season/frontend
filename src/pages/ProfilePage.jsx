@@ -249,7 +249,10 @@ function RankCard() {
     <div className="rank-card">
       <RankMedal rank={info.rank} size={104} stars={Math.min(slots, inRank + 1)} slots={slots} />
       <div className="rank-card__body">
-        <p className="rank-card__title">{info.rank.title}</p>
+        <p className="rank-card__title">
+          {info.rank.title}
+          {info.immortal_place && <b className="lb__imm"> #{info.immortal_place}</b>}
+        </p>
         <p className="rank-card__sub">
           Прогноз на ЕГЭ: <b>{info.forecast_test} {scoreWord(info.forecast_test)}</b> ({info.forecast_primary} перв.){' '}
           · <span className="rank-card__pts">{Math.round(info.pts)} PTS</span>
