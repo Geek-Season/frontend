@@ -238,6 +238,16 @@ export function getMyRank() {
 // ---------- Рейтинг ----------
 
 /** period: 'week' | 'all' */
+/** Настройки сайта: {exam_date} — дата ЕГЭ для счётчика на главной (null — не задана). */
+export function getSite() {
+  return request('/site')
+}
+
+/** Админ: задать дату ЕГЭ ({exam_date: '2027-06-08' | null}). */
+export function updateSite(body) {
+  return request('/admin/site', { method: 'PUT', body: JSON.stringify(body) })
+}
+
 /** Публичная карточка ученика: ранг, место, решено, серия, достижения, календарь активности. */
 export function getStudentCard(id) {
   return request(`/rating/users/${id}`)

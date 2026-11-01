@@ -759,3 +759,29 @@ button.nav__user.active { background: var(--surface-2); color: var(--text); }
 .usermenu__menu [role="menuitem"]:hover, .usermenu__menu [role="menuitem"]:focus-visible { background: var(--surface-2); outline: none; }
 .usermenu__menu hr { border: 0; border-top: 1px solid var(--border); margin: 6px 0; }
 .usermenu__menu .usermenu__danger, .usermenu__menu .usermenu__danger svg { color: var(--bad); }
+
+/* ---------- Главная ---------- */
+.home { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: center; padding: 40px 0 24px; }
+.home__hello { font-size: 44px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; margin: 0; overflow-wrap: anywhere; }
+.home__hello span { color: var(--lime); }
+.home__sub { font-size: 18px; color: var(--muted); margin: 12px 0 24px; max-width: 520px; }
+.home__facts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.home__fact { display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; }
+.home__count { font-family: var(--mono); font-size: 18px; color: var(--lime); }
+.home__cta { display: flex; gap: 10px; flex-wrap: wrap; }
+.home__cta .btn { display: inline-block; }
+.term { background: #0b0e15; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45); overflow: hidden; }
+.term__bar { display: flex; gap: 6px; align-items: center; padding: 9px 12px; border-bottom: 1px solid var(--border); background: #121621; }
+.term__bar i { width: 10px; height: 10px; border-radius: 50%; }
+.term__bar i:nth-child(1) { background: #f2667a; }
+.term__bar i:nth-child(2) { background: #f5c542; }
+.term__bar i:nth-child(3) { background: #3ecf8e; }
+.term__bar span { margin-left: 8px; font: 12px var(--mono); color: var(--muted); }
+.term__screen { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.term pre { margin: 0; padding: 10px 14px 14px; font: 11px/11px var(--mono); color: var(--lime); text-shadow: 0 0 6px rgba(198, 243, 107, 0.35); text-align: left; }
+@media (max-width: 760px) {
+  .home { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 20px; }
+  .home__hello { font-size: 32px; }
+  .term { justify-self: center; max-width: 100%; }
+  .term pre { font-size: 8px; line-height: 8px; }
+}
