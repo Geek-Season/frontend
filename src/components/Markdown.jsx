@@ -4,6 +4,7 @@
 //   **жирный**, *курсив*, ~~зачёркнутый~~, <u>подчёркнутый</u>, <mark>выделение</mark>
 //   1111011<sub>2</sub> = 123<sub>10</sub>, 2<sup>10</sup>      — индексы и степени
 //   $27x98876_{22} + 26x51_{22}$, $$\sum_{i=1}^{n} i$$           — формулы (KaTeX)
+//   $1011_10 + 77_8$ — многозначный индекс можно без скобок (mathIndex.js)
 //   таблицы | a | b |, списки, `код`, ```блоки кода```
 //   ![подпись](/files/….png)                                     — картинка в любом месте текста
 //   одиночный перенос строки — новая строка (как в старых задачах из простого текста)
@@ -19,6 +20,7 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 
 import { fileUrl } from '../api.js'
+import remarkMathIndex from './mathIndex.js'
 import remarkTaskTags from './markdownTags.js'
 
 // KaTeX (~75 КБ и шрифты) грузится, только когда в тексте есть формулы.
@@ -55,7 +57,7 @@ export default function Markdown({ text, className = '', resolveImage }) {
   return (
     <div className={`md ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks, remarkMath, remarkTaskTags]}
+        remarkPlugins={[remarkGfm, remarkBreaks, remarkMath, remarkMathIndex, remarkTaskTags]}
         rehypePlugins={katexPlugin ? [[katexPlugin, { throwOnError: false, strict: false }]] : []}
         urlTransform={urlTransform}
         components={{ img: MarkdownImage, a: MarkdownLink, table: MarkdownTable }}
