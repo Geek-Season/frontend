@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 
-import { answerHomework, submitHomework } from '../api.js'
+import { answerHomework, MAX_ANSWER_LENGTH, submitHomework } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import Markdown from '../components/Markdown.jsx'
 import { announceRankUp } from '../components/RankUp.jsx'
@@ -180,7 +180,7 @@ function HomeworkTask({ homework, item, index, total, submitted }) {
                   value={partAnswers[p.number]}
                   onChange={(e) => setPartAnswers((a) => ({ ...a, [p.number]: e.target.value }))}
                   placeholder="—"
-                  maxLength={100}
+                  maxLength={MAX_ANSWER_LENGTH}
                   autoComplete="off"
                   disabled={sending}
                 />
@@ -207,7 +207,7 @@ function HomeworkTask({ homework, item, index, total, submitted }) {
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 placeholder="—"
-                maxLength={100}
+                maxLength={MAX_ANSWER_LENGTH}
                 autoComplete="off"
                 disabled={sending}
               />

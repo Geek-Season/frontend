@@ -7,6 +7,7 @@ import {
   deleteTaskFile,
   fileUrl,
   getTaskFull,
+  MAX_ANSWER_LENGTH,
   updateTask,
   uploadTaskFile,
 } from '../api.js'
@@ -445,7 +446,7 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
             onChange={(v) => setPart(index, 'question', v)} {...editorProps} />
           <label className="field">
             <span>Ответ *</span>
-            <input required maxLength={100} value={p.correct_answer} onChange={(e) => setPart(index, 'correct_answer', e.target.value)} placeholder="28 48" />
+            <input required maxLength={MAX_ANSWER_LENGTH} value={p.correct_answer} onChange={(e) => setPart(index, 'correct_answer', e.target.value)} placeholder="28 48" />
           </label>
           <MarkdownEditor label={`Разбор ${p.number}`} rows={2} value={p.explanation ?? ''}
             onChange={(v) => setPart(index, 'explanation', v)} {...editorProps} />
@@ -458,7 +459,7 @@ function TaskForm({ initial, code, numberTitle, onCancel, onSaved }) {
           <span>Правильный ответ *</span>
           <input
             required
-            maxLength={100}
+            maxLength={MAX_ANSWER_LENGTH}
             value={form.correct_answer}
             onChange={(e) => set('correct_answer', e.target.value)}
             placeholder="22 · zyxw · 2 20"
