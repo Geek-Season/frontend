@@ -6,6 +6,9 @@
 // переменной VITE_API_URL, например https://neyman-inf.netrun.io
 const BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')
 
+// Самый длинный ответ, который принимает API (ответ-таблица 25 номера — до ~200 символов).
+export const MAX_ANSWER_LENGTH = 255
+
 // Токен вошедшего пользователя. Его выставляет auth.jsx после входа.
 let authToken = null
 export function setAuthToken(token) {

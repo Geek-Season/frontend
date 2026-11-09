@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 
-import { finishExam, getMe, saveExamAnswer, startExam } from '../api.js'
+import { finishExam, getMe, MAX_ANSWER_LENGTH, saveExamAnswer, startExam } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import Markdown from '../components/Markdown.jsx'
 import { announceRankUp } from '../components/RankUp.jsx'
@@ -240,7 +240,7 @@ function ExamRun({ exam }) {
               value={answers[i.position]}
               onChange={(e) => change(i.position, e.target.value)}
               onBlur={() => blur(i.position)}
-              maxLength={100}
+              maxLength={MAX_ANSWER_LENGTH}
               autoComplete="off"
               disabled={finishing}
             />

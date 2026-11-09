@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { checkAnswer, getSolution } from '../api.js'
+import { checkAnswer, getSolution, MAX_ANSWER_LENGTH } from '../api.js'
 import Markdown from './Markdown.jsx'
 import { announceRankUp } from './RankUp.jsx'
 import TaskMedia from './TaskMedia.jsx'
@@ -96,7 +96,7 @@ export default function TaskCard({ task, position, onChecked }) {
                       setResult(null)
                     }}
                     placeholder="—"
-                    maxLength={100}
+                    maxLength={MAX_ANSWER_LENGTH}
                     autoComplete="off"
                   />
                   {r && (
@@ -125,7 +125,7 @@ export default function TaskCard({ task, position, onChecked }) {
             setResult(null)
           }}
           placeholder="—"
-          maxLength={100}
+          maxLength={MAX_ANSWER_LENGTH}
           autoComplete="off"
         />
         <button className="btn" disabled={!canSubmit || checking}>
