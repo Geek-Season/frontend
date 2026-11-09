@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '../auth.jsx'
+import { useMyHomework } from '../queries.js'
 import { RankUpHost } from './RankUp.jsx'
 import UserMenu from './UserMenu.jsx'
 
@@ -35,6 +36,7 @@ export default function Layout() {
           <nav className="nav">
             <NavLink to="/tasks" className={`nav__link ${onTasks ? 'active' : ''}`}>Задания</NavLink>
             <NavLink to="/exam" className="nav__link">Пробник</NavLink>
+            {user && <HomeworkLink />}
             <NavLink to="/rating" className="nav__link">Рейтинг</NavLink>
             {!checking && (user ? (
               <UserMenu />
@@ -49,5 +51,16 @@ export default function Layout() {
       </main>
       <RankUpHost />
     </>
+  )
+}
+
+// «Домашки» — только для вошедших. Точка — есть несданная домашка.
+function HomeworkLink() {
+  const pending = (useMyHomework().data ?? []).some((h) => !h.submitted_at)
+  return (
+    <NavLink to="/homework" className="nav__link nav__link--homework">
+      Домашки
+      {pending && <span className="nav__dot" role="img" aria-label="есть несданная домашка" />}
+    </NavLink>
   )
 }
