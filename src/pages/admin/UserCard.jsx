@@ -331,7 +331,7 @@ export default function UserCard({ id, onClose }) {
                 action={
                   <ConfirmButton
                     label="Сбросить всю статистику"
-                    question={`Удалить ${u.attempts} ${plural(u.attempts, 'ответ', 'ответа', 'ответов')} и ${u.exams} ${plural(u.exams, 'пробник', 'пробника', 'пробников')}? Отменить нельзя.`}
+                    question={`Удалить ${u.attempts} ${plural(u.attempts, 'ответ', 'ответа', 'ответов')} и ${u.exams} ${plural(u.exams, 'пробник', 'пробника', 'пробников')}? Ответы в домашках тоже сотрутся — их можно будет решить заново. Отменить нельзя.`}
                     yes="Удалить"
                     danger
                     disabled={u.attempts + u.exams + u.games + u.achievements === 0 && !u.calibrated_at}

@@ -380,11 +380,11 @@ export function useInvalidate() {
     /** Админ изменил ученика: карточка уже свежая (detail), списки, журнал и рейтинг — перезапросить. */
     userChanged(detail) {
       queryClient.setQueryData(keys.adminUser(me, detail.id), detail)
-      for (const key of [['admin-users', me], keys.adminActions(me), ['rating', me]]) {
+      for (const key of [['admin-users', me], keys.adminActions(me), ['rating', me], ['admin-homework', me]]) {
         queryClient.invalidateQueries({ queryKey: key })
       }
       if (detail.id === me) {
-        for (const key of [keys.stats(me), keys.rank(me), keys.achievements(me), ['exam', me], ['tasks', me], keys.numbers(me)]) {
+        for (const key of [keys.stats(me), keys.rank(me), keys.achievements(me), ['exam', me], ['tasks', me], keys.numbers(me), ['homework', me]]) {
           queryClient.invalidateQueries({ queryKey: key })
         }
       }
