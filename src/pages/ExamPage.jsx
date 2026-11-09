@@ -138,6 +138,13 @@ function ExamRun({ exam }) {
     navigate(`/exam/${exam.id}`, { replace: true })
   }
 
+  // Таймер создаётся один раз на пробник, а finish — новая на каждом рендере:
+  // через ref таймер всегда вызывает актуальную версию, а не ту, что была при его создании.
+  const finishRef = useRef(finish)
+  useEffect(() => {
+    finishRef.current = finish
+  })
+
   // Отсчёт: раз в секунду. Время вышло — завершаем.
   useEffect(() => {
     const tick = setInterval(() => {
@@ -145,7 +152,7 @@ function ExamRun({ exam }) {
       setLeft(ms)
       if (ms <= 0) {
         clearInterval(tick)
-        finish()
+        finishRef.current()
       }
     }, 1000)
     return () => clearInterval(tick)
