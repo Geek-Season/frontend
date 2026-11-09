@@ -15,6 +15,7 @@ import { plainText } from '../components/Markdown.jsx'
 import MarkdownEditor, { replaceImageSources } from '../components/MarkdownEditor.jsx'
 import { fileIcon, formatSize } from '../components/TaskMedia.jsx'
 import { useAdminTasks, useInvalidate, useNumbers } from '../queries.js'
+import HomeworkTab from './admin/HomeworkTab.jsx'
 import JournalTab from './admin/JournalTab.jsx'
 import SiteTab from './admin/SiteTab.jsx'
 import UsersTab from './admin/UsersTab.jsx'
@@ -65,6 +66,7 @@ const SOURCES = [
 const TABS = [
   { key: 'tasks', title: 'Задачи' },
   { key: 'users', title: 'Ученики' },
+  { key: 'homework', title: 'Домашки' },
   { key: 'log', title: 'Журнал' },
   { key: 'site', title: 'Сайт' },
 ]
@@ -108,6 +110,7 @@ export default function AdminPage() {
       </div>
       {tab === 'tasks' && <TasksTab />}
       {tab === 'users' && <UsersTab />}
+      {tab === 'homework' && <HomeworkTab />}
       {tab === 'log' && <JournalTab />}
       {tab === 'site' && <SiteTab />}
     </section>

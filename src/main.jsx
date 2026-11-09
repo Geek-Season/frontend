@@ -8,6 +8,8 @@ import Layout from './components/Layout.jsx'
 import ExamPage from './pages/ExamPage.jsx'
 import ExamResultPage from './pages/ExamResultPage.jsx'
 import HomePage from './pages/HomePage.jsx'
+import HomeworkListPage from './pages/HomeworkListPage.jsx'
+import HomeworkPage from './pages/HomeworkPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import NumbersPage from './pages/NumbersPage.jsx'
 import NumberTasksPage from './pages/NumberTasksPage.jsx'
@@ -28,8 +30,9 @@ const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
 //   /login          — вход через Telegram
 //   /profile        — профиль (только для вошедших)
 //   /exam           — пробник (старт или идущий), /exam/12 — результат
+//   /homework       — домашки ученика, /homework/5 — одна домашка (только для вошедших)
 //   /rating         — рейтинг
-//   /admin          — админка: задачи, ученики (?tab=users), журнал (?tab=log); только админ
+//   /admin          — админка: задачи, ученики (?tab=users), домашки (?tab=homework), журнал (?tab=log); только админ
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -47,6 +50,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/exam" element={<ExamPage />} />
             <Route path="/exam/:id" element={<ExamResultPage />} />
+            <Route path="/homework" element={<HomeworkListPage />} />
+            <Route path="/homework/:id" element={<HomeworkPage />} />
             <Route path="/rating" element={<RatingPage />} />
             <Route path="/admin" element={<Suspense fallback={<p className="muted">Загрузка…</p>}><AdminPage /></Suspense>} />
             <Route path="*" element={<PlaceholderPage title="Страница не найдена" />} />

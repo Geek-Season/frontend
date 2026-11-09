@@ -5,7 +5,7 @@ import Markdown from './Markdown.jsx'
 import { announceRankUp } from './RankUp.jsx'
 import TaskMedia from './TaskMedia.jsx'
 
-const SOURCE_LABELS = { demo: 'Демо', official: 'Экзамен', approbation: 'Апробация', author: 'Авторская' }
+export const SOURCE_LABELS = { demo: 'Демо', official: 'Экзамен', approbation: 'Апробация', author: 'Авторская' }
 const STATUS_LABELS = { solved: '✓ Решена', failed: '✗ Не решена' }
 
 // Одна задача: условие, поле ответа, кнопка «Проверить» и результат.
@@ -166,7 +166,7 @@ function mistakes(n) {
   return `ещё ${n} ${n === 1 ? 'ошибки' : 'ошибок'}`
 }
 
-function Solution({ solution }) {
+export function Solution({ solution }) {
   return (
     <div className="verdict verdict--solution">
       {solution.parts.length > 0 ? (
@@ -189,7 +189,7 @@ function Solution({ solution }) {
  * (засчитывается только первая попытка по задаче); гость — просто «Верно!» / «Неверно.».
  * У 19–21 с частично верными ответами PTS может и прибавиться: засчитывается доля верных.
  */
-function VerdictLine({ result, hasParts }) {
+export function VerdictLine({ result, hasParts }) {
   const ok = result.is_correct
   const partial = hasParts && !ok
   const head = partial

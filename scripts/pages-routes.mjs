@@ -4,7 +4,7 @@
 // из rating/index.html со статусом 200; если такого файла нет — 404.html со
 // статусом 404 (страница откроется, но с ошибкой в консоли). Поэтому кладём копии
 // для всех страниц, адреса которых известны заранее, а 404.html оставляем для
-// остальных (например, результат пробника /exam/12).
+// остальных (например, результат пробника /exam/12 или домашка /homework/5).
 //
 // Слэш на конце адреса дописывает сам сайт (components/Layout.jsx).
 
@@ -20,7 +20,7 @@ const NUMBER_CODES = [
   ...Array.from({ length: 6 }, (_, i) => String(i + 22)),
 ]
 
-const ROUTES = ['tasks', 'login', 'profile', 'exam', 'rating', 'admin', ...NUMBER_CODES.map((c) => `tasks/${c}`)]
+const ROUTES = ['tasks', 'login', 'profile', 'exam', 'homework', 'rating', 'admin', ...NUMBER_CODES.map((c) => `tasks/${c}`)]
 
 copyFileSync(join(DIST, 'index.html'), join(DIST, '404.html'))
 for (const route of ROUTES) {

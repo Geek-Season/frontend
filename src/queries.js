@@ -46,6 +46,12 @@ export const keys = {
   adminUsers: (me, params) => ['admin-users', me, params],
   adminUser: (me, id) => ['admin-user', me, String(id)],
   adminActions: (me) => ['admin-actions', me],
+  homeworkList: (me) => ['homework', me, 'list'],
+  homework: (me, id) => ['homework', me, 'one', String(id)],
+  adminHomeworks: (me) => ['admin-homework', me, 'list'],
+  adminHomework: (me, id) => ['admin-homework', me, 'one', String(id)],
+  adminHomeworkResults: (me, id) => ['admin-homework', me, 'results', String(id)],
+  homeworkPicker: (me, params) => ['admin-homework', me, 'picker', params],
 }
 
 // ---------- Номера и задачи ----------
@@ -225,6 +231,62 @@ export function useAdminTasks(code, enabled) {
   })
 }
 
+// ---------- Домашки ----------
+
+/** Мои домашки. Из этого же списка шапка знает, есть ли несданная (точка у «Домашки»). */
+export function useMyHomework() {
+  const me = useMe()
+  return useQuery({
+    queryKey: keys.homeworkList(me),
+    queryFn: api.getMyHomework,
+    staleTime: 60 * 1000,
+    enabled: me !== null && me !== 'guest',
+  })
+}
+
+export function useHomework(id) {
+  const me = useMe()
+  return useQuery({
+    queryKey: keys.homework(me, id),
+    queryFn: () => api.getHomework(id),
+    enabled: me !== null && me !== 'guest',
+  })
+}
+
+export function useAdminHomeworks() {
+  const me = useMe()
+  return useQuery({ queryKey: keys.adminHomeworks(me), queryFn: api.getAdminHomeworks, enabled: me !== null && me !== 'guest' })
+}
+
+export function useAdminHomework(id) {
+  const me = useMe()
+  return useQuery({
+    queryKey: keys.adminHomework(me, id),
+    queryFn: () => api.getAdminHomework(id),
+    enabled: id != null && me !== null && me !== 'guest',
+  })
+}
+
+export function useHomeworkResults(id) {
+  const me = useMe()
+  return useQuery({
+    queryKey: keys.adminHomeworkResults(me, id),
+    queryFn: () => api.getHomeworkResults(id),
+    staleTime: 0, // ученики решают прямо сейчас
+    enabled: id != null && me !== null && me !== 'guest',
+  })
+}
+
+export function useHomeworkPicker(params) {
+  const me = useMe()
+  return useQuery({
+    queryKey: keys.homeworkPicker(me, params),
+    queryFn: () => api.getHomeworkPicker(params),
+    placeholderData: (previous) => previous,
+    enabled: me !== null && me !== 'guest',
+  })
+}
+
 // ---------- Что обновить после изменений ----------
 
 /** Хуки, которые помечают кэш устаревшим после действий ученика и админа. */
@@ -287,6 +349,32 @@ export function useInvalidate() {
         ['tasks', me], ['rating', me]]) {
         queryClient.invalidateQueries({ queryKey: key })
       }
+    },
+
+    /**
+     * Ученик ответил в домашке. Домашка уже обновлена на месте (setQueryData на странице),
+     * здесь — всё, что ответ меняет так же, как на странице номера: статистика, PTS, задачи.
+     */
+    homeworkAnswered(id, isCorrect) {
+      queryClient.invalidateQueries({ queryKey: keys.homeworkList(me) })
+      for (const key of [keys.stats(me), keys.rank(me), keys.achievements(me), keys.numbers(me), ['tasks', me]]) {
+        queryClient.invalidateQueries({ queryKey: key })
+      }
+      if (isCorrect) queryClient.invalidateQueries({ queryKey: ['rating', me] })
+      queryClient.invalidateQueries({ queryKey: ['admin-homework', me] }) // админ мог прислать домашку себе
+    },
+
+    /** Ученик сдал домашку: деталь уже свежая (ответ сервера), список — перезапросить. */
+    homeworkSubmitted(id, detail) {
+      queryClient.setQueryData(keys.homework(me, id), detail)
+      queryClient.invalidateQueries({ queryKey: keys.homeworkList(me) })
+      queryClient.invalidateQueries({ queryKey: ['admin-homework', me] })
+    },
+
+    /** Админ изменил домашку: его списки и таблицы, а у себя-ученика — список домашек. */
+    homeworkChanged() {
+      queryClient.invalidateQueries({ queryKey: ['admin-homework', me] })
+      queryClient.invalidateQueries({ queryKey: ['homework', me] })
     },
 
     /** Админ изменил ученика: карточка уже свежая (detail), списки, журнал и рейтинг — перезапросить. */

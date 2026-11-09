@@ -191,6 +191,85 @@ export function getAdminActions(params = {}) {
   return request(`/admin/actions?${query}`)
 }
 
+// ---------- Домашки ----------
+
+/** Мои домашки: [{ id, title, comment, numbers, total, answered, correct, sent_at, submitted_at }] */
+export function getMyHomework() {
+  return request('/homework')
+}
+
+/** Домашка с задачами и моими ответами; разборы (item.solution) — после сдачи. */
+export function getHomework(id) {
+  return request(`/homework/${id}`)
+}
+
+/**
+ * Единственная попытка: { is_correct, parts, pts_delta, pts_repeat, rank_up }.
+ * answer — строка или {"19": …, "20": …, "21": …}, как в checkAnswer. Повторно — 409.
+ */
+export function answerHomework(id, taskId, answer) {
+  return request(`/homework/${id}/tasks/${taskId}/answer`, {
+    method: 'POST',
+    body: JSON.stringify(typeof answer === 'string' ? { answer } : { answers: answer }),
+  })
+}
+
+/** Сдать домашку — возвращает её же, уже с разборами. */
+export function submitHomework(id) {
+  return request(`/homework/${id}/submit`, { method: 'POST' })
+}
+
+// ---------- Админка: домашки ----------
+
+export function getAdminHomeworks() {
+  return request('/admin/homework')
+}
+
+export function getAdminHomework(id) {
+  return request(`/admin/homework/${id}`)
+}
+
+/** Новый черновик: { title, comment, task_ids, user_ids }. */
+export function createHomework(body) {
+  return request('/admin/homework', { method: 'POST', body: JSON.stringify(body) })
+}
+
+/** Черновик — любые поля; отправленная — только title и comment. */
+export function updateHomework(id, body) {
+  return request(`/admin/homework/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
+}
+
+export function sendHomework(id) {
+  return request(`/admin/homework/${id}/send`, { method: 'POST' })
+}
+
+export function addHomeworkStudents(id, userIds) {
+  return request(`/admin/homework/${id}/students`, { method: 'POST', body: JSON.stringify({ user_ids: userIds }) })
+}
+
+export function deleteHomework(id) {
+  return request(`/admin/homework/${id}`, { method: 'DELETE' })
+}
+
+/** Таблица «ученик × задача». */
+export function getHomeworkResults(id) {
+  return request(`/admin/homework/${id}/results`)
+}
+
+/** Банк задач для конструктора: { number, q, user_ids, limit, offset } → { total, items[{…, tried_by}] }. */
+export function getHomeworkPicker({ number, q, userIds = [], limit = 30, offset = 0 } = {}) {
+  const params = new URLSearchParams({ limit, offset })
+  if (number) params.set('number', number)
+  if (q) params.set('q', q)
+  for (const id of userIds) params.append('user_ids', id)
+  return request(`/admin/homework/tasks?${params}`)
+}
+
+/** Случайные задачи номера, которых ещё нет в домашке и которые выбранные ученики не решали. */
+export function getRandomHomeworkTasks(body) {
+  return request('/admin/homework/random', { method: 'POST', body: JSON.stringify(body) })
+}
+
 // ---------- Прогресс ----------
 
 /** Статистика вошедшего ученика (см. /docs → Прогресс → /me/stats) */
