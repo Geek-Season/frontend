@@ -1,5 +1,5 @@
 import { QRCodeSVG } from 'qrcode.react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 
 import { getLoginStatus, loginWithCode, startTelegramLogin } from '../api.js'
@@ -81,6 +81,13 @@ export default function LoginPage() {
     navigate('/profile', { replace: true })
   }
 
+  // Опрос живёт, пока не сменится ключ, а finishLogin — новая на каждом рендере:
+  // через ref опрос всегда вызывает актуальную версию.
+  const finishLoginRef = useRef(finishLogin)
+  useEffect(() => {
+    finishLoginRef.current = finishLogin
+  })
+
   // 1. Ключ для QR: прежний, если ещё действует; новый — по кнопке «Показать новый код».
   useEffect(() => {
     let cancelled = false
@@ -113,7 +120,7 @@ export default function LoginPage() {
       try {
         const result = await getLoginStatus(session.token)
         if (cancelled) return
-        if (result.status === 'confirmed') return finishLogin(result)
+        if (result.status === 'confirmed') return finishLoginRef.current(result)
         if (result.status !== 'pending') {
           saveQr(null) // устарел или отменён в боте — повторно не показываем
           return setStatus(result.status)
