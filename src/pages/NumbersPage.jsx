@@ -67,9 +67,6 @@ export default function NumbersPage() {
             <span className="progress" title={user ? `Решено ${n.solved} из ${n.tasks_count}` : undefined}>
               <span style={{ width: `${percent(n.solved, n.tasks_count)}%` }} />
             </span>
-            <span className="number-card__count">
-              {user ? `${n.solved} / ${n.tasks_count}` : taskWord(n.tasks_count)}
-            </span>
           </Link>
         ))}
       </div>
@@ -79,12 +76,4 @@ export default function NumbersPage() {
 
 function percent(part, total) {
   return total ? Math.round((part / total) * 100) : 0
-}
-
-function taskWord(count) {
-  const mod10 = count % 10
-  const mod100 = count % 100
-  if (mod10 === 1 && mod100 !== 11) return `${count} задача`
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${count} задачи`
-  return `${count} задач`
 }
