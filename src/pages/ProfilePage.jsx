@@ -101,9 +101,13 @@ function Stats({ stats }) {
               <span className={`recent__mark ${a.is_correct ? 'ok' : 'bad'}`}>
                 {a.is_correct ? '✓ верно' : '✗ неверно'}
               </span>
-              <Link to={`/tasks/${a.exam_number}`} className="recent__task">
-                № {a.exam_number} · задача {a.task_id}
-              </Link>
+              {a.is_archived ? (
+                <span className="recent__task">№{a.exam_number} · архив · задача {a.task_id}</span>
+              ) : (
+                <Link to={`/tasks/${a.exam_number}`} className="recent__task">
+                  № {a.exam_number} · задача {a.task_id}
+                </Link>
+              )}
               <code className="recent__answer">{a.answer}</code>
               <span className="muted small">{timeAgo(a.created_at)}</span>
             </li>
