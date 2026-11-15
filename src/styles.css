@@ -83,6 +83,7 @@ h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; }
 .chip:hover { color: var(--text); border-color: var(--accent); }
 
 .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.toolbar .segmented { flex-wrap: wrap; max-width: 100%; }
 .segmented { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
 .segmented button { background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 7px; cursor: pointer; }
 .segmented button:hover { color: var(--text); }

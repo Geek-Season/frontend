@@ -104,7 +104,9 @@ export default function ExamResultPage() {
             <TaskMedia task={i} />
             {i.question && <div className="part__question"><span className="part__number">{i.exam_number}</span><Markdown text={i.question} /></div>}
             {i.explanation && <Markdown className="verdict__explanation" text={i.explanation} />}
-            <Link to={`/tasks/${cardCode(i)}`} className="small">Задачи номера {cardCode(i)} →</Link>
+            {trainingCode(i) != null && (
+              <Link to={`/tasks/${trainingCode(i)}`} className="small">Задачи номера {trainingCode(i)} →</Link>
+            )}
           </details>
         ))}
       </div>
@@ -115,4 +117,9 @@ export default function ExamResultPage() {
 // Части 19, 20, 21 живут на одной карточке «19-21».
 function cardCode(item) {
   return item.question ? '19-21' : item.exam_number
+}
+
+// null означает архив; только отсутствие поля включает совместимость со старым API.
+function trainingCode(item) {
+  return item.task_number === undefined ? cardCode(item) : item.task_number
 }
